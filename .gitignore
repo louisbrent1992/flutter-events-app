@@ -1,0 +1,12 @@
+# Start Generation Here
+.vscode/
+# End Generation Here
+
+# Ignore all markdown files in root except README.md
+/*.md
+!README.md
+
+# Ignore scripts in parent directory
+/scripts
+
+/resized_screenshots
