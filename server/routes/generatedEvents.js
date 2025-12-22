@@ -280,7 +280,7 @@ router.post("/import", async (req, res) => {
 		].join("\n");
 
 		const completion = await client.chat.completions.create({
-			model: process.env.OPENAI_EVENTS_MODEL || "gpt-4o-mini",
+			model: process.env.OPENAI_EVENTS_MODEL || "gpt-5-nano",
 			messages: [
 				{ role: "developer", content: prompt },
 				{

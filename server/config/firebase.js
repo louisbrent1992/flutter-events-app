@@ -37,10 +37,12 @@ const initFirebase = () => {
 		}
 
 		// Initialize the app
-		initializeApp({
-			credential: cert(serviceAccount),
-			databaseURL: process.env.FIREBASE_DATABASE_URL,
-		});
+		// `databaseURL` is only required for Firebase Realtime Database (RTDB).
+		const appOptions = { credential: cert(serviceAccount) };
+		if (process.env.FIREBASE_DATABASE_URL) {
+			appOptions.databaseURL = process.env.FIREBASE_DATABASE_URL;
+		}
+		initializeApp(appOptions);
 
 		console.log("Firebase Admin initialized successfully");
 	} catch (error) {
