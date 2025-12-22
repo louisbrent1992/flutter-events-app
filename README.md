@@ -83,7 +83,7 @@ To get started with the Flutter Recipe App, follow these steps:
 
 5. Set up environment variables:
 
-   Copy `.env.example` to `.env` and fill in the required API keys.
+   In the `server/` folder, copy `env.example` to `.env` and fill in the required API keys.
 
 6. Start the server:
 

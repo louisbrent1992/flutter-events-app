@@ -21,7 +21,7 @@ const { getTikTokVideoFromUrl } = require("../utils/tiktokAPI");
 const { getYouTubeVideoFromUrl } = require("../utils/youtubeAPI");
 
 // Jina Reader fallback for blocked pages (same idea as generatedRecipes.js)
-const JINA_AI_BASE_URL = process.env.JINA_AI_BASE_URL || "https://r.jina.ai/";
+const JINA_AI_BASE_URL = "https://r.jina.ai/";
 const JINA_AI_API_KEY = process.env.JINA_AI_API_KEY;
 const JINA_AI_TIMEOUT_MS = Number(process.env.JINA_AI_TIMEOUT_MS || 20000);
 const JINA_AI_RETRIES = Number(process.env.JINA_AI_RETRIES || 1);
@@ -280,7 +280,7 @@ router.post("/import", async (req, res) => {
 		].join("\n");
 
 		const completion = await client.chat.completions.create({
-			model: process.env.OPENAI_EVENTS_MODEL || "gpt-5-nano",
+			model: "gpt-5-nano",
 			messages: [
 				{ role: "developer", content: prompt },
 				{
@@ -326,7 +326,7 @@ router.post("/scan", async (req, res) => {
 		].join("\n");
 
 		const completion = await client.chat.completions.create({
-			model: process.env.OPENAI_EVENTS_VISION_MODEL || "gpt-4o-mini",
+			model: "gpt-5-nano",
 			messages: [
 				{ role: "developer", content: prompt },
 				{
@@ -397,7 +397,7 @@ router.post("/plan", async (req, res) => {
 		].join("\n");
 
 		const completion = await client.chat.completions.create({
-			model: process.env.OPENAI_EVENTS_PLANNER_MODEL || "gpt-4o-mini",
+			model: "gpt-5-nano",
 			messages: [
 				{ role: "developer", content: prompt },
 				{
