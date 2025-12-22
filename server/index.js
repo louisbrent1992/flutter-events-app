@@ -56,6 +56,10 @@ const aiEventRoutes = require("./routes/generatedEvents");
 const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
 const eventRoutes = require("./routes/events");
+const discoverRoutes = require("./routes/discover");
+const collectionsRoutes = require("./routes/collections");
+const generatedHistoryRoutes = require("./routes/generatedHistory");
+const randomRoutes = require("./routes/random");
 const dataDeletionRoutes = require("./routes/data-deletion");
 const uiRoutes = require("./routes/ui");
 
@@ -88,6 +92,10 @@ app.use("/api/ai/events", aiEventRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/collections", collectionsRoutes);
+app.use("/api/generated", generatedHistoryRoutes);
+app.use("/api", randomRoutes);
+app.use("/api", discoverRoutes);
 app.use("/api", dataDeletionRoutes);
 app.use("/api", uiRoutes);
 

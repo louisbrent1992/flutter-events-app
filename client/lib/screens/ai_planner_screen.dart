@@ -6,6 +6,7 @@ import 'package:eventease/providers/subscription_provider.dart';
 import 'package:eventease/services/credits_service.dart';
 import 'package:eventease/services/event_ai_service.dart';
 import 'package:eventease/theme/theme.dart';
+import 'package:eventease/providers/generated_plan_provider.dart';
 import '../models/event.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
@@ -42,9 +43,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
     try {
       await subscriptionProvider.refreshData();
     } catch (_) {}
-    final ok = await subscriptionProvider.hasEnoughCredits(
-      CreditType.aiPlan,
-    );
+    final ok = await subscriptionProvider.hasEnoughCredits(CreditType.aiPlan);
     if (!ok && context.mounted) {
       showDialog(
         context: context,
@@ -99,12 +98,28 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
           _itinerary = (resp.data!['itinerary'] as List?) ?? const [];
         });
 
+        // Persist to history (best-effort)
+        try {
+          final input = <String, dynamic>{
+            'vibe': _vibe.text.trim(),
+            'budget': _budget.text.trim(),
+            'location': _location.text.trim(),
+            'dates': _dates.text.trim(),
+            'constraints': _constraints.text.trim(),
+          };
+          await context.read<GeneratedPlanProvider>().savePlan(
+            input: input,
+            output: Map<String, dynamic>.from(resp.data!),
+            title: (resp.data!['title'] ?? 'AI Plan').toString(),
+          );
+        } catch (_) {}
+
         // Deduct credits (best-effort)
         try {
           await context.read<SubscriptionProvider>().useCredits(
-                CreditType.aiPlan,
-                reason: 'AI planner',
-              );
+            CreditType.aiPlan,
+            reason: 'AI planner',
+          );
         } catch (_) {}
       } else {
         SnackBarHelper.showError(context, resp.userFriendlyMessage);
@@ -175,10 +190,71 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
         title: 'Planner',
         fullTitle: 'AI Event Planner',
         actions: [
-          IconButton(
-            tooltip: 'Generate',
-            icon: const Icon(Icons.auto_awesome_rounded),
-            onPressed: _generatePlan,
+          PopupMenuButton<String>(
+            tooltip: 'More',
+            icon: Icon(
+              Icons.more_vert,
+              size: AppSizing.responsiveIconSize(
+                context,
+                mobile: 24,
+                tablet: 28,
+                desktop: 30,
+              ),
+            ),
+            color: Theme.of(context).colorScheme.surface.withValues(
+              alpha: Theme.of(context).colorScheme.alphaVeryHigh,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(
+                  alpha: Theme.of(context).colorScheme.overlayLight,
+                ),
+                width: 1,
+              ),
+            ),
+            onSelected: (value) async {
+              switch (value) {
+                case 'generate':
+                  await _generatePlan();
+                  break;
+                case 'history':
+                  if (!mounted) return;
+                  Navigator.pushNamed(context, '/generated');
+                  break;
+              }
+            },
+            itemBuilder:
+                (context) => [
+                  PopupMenuItem<String>(
+                    value: 'generate',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.auto_awesome_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('Generate'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'history',
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.history_rounded,
+                          size: 18,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('History'),
+                      ],
+                    ),
+                  ),
+                ],
           ),
         ],
       ),
@@ -232,7 +308,8 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 maxLines: 2,
                 decoration: const InputDecoration(
                   labelText: 'Constraints (optional)',
-                  hintText: 'e.g. no alcohol, wheelchair accessible, near subway…',
+                  hintText:
+                      'e.g. no alcohol, wheelchair accessible, near subway…',
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
@@ -251,7 +328,9 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 ),
                 SizedBox(height: AppSpacing.md),
                 if (_itinerary.isEmpty)
-                  const Text('No itinerary items returned. Try again with more details.'),
+                  const Text(
+                    'No itinerary items returned. Try again with more details.',
+                  ),
                 for (final raw in _itinerary)
                   if (raw is Map)
                     Card(
@@ -260,9 +339,14 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                         title: Text((raw['title'] ?? 'Event').toString()),
                         subtitle: Text(
                           [
-                            raw['startAt']?.toString(),
-                            raw['venueName']?.toString(),
-                          ].where((s) => s != null && s.toString().trim().isNotEmpty).join(' • '),
+                                raw['startAt']?.toString(),
+                                raw['venueName']?.toString(),
+                              ]
+                              .where(
+                                (s) =>
+                                    s != null && s.toString().trim().isNotEmpty,
+                              )
+                              .join(' • '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -282,5 +366,3 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
     );
   }
 }
-
-

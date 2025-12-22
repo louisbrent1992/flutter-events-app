@@ -1,33 +1,41 @@
-# client
+# EventEase Client
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-# client
-
-A new Flutter project.
+Flutter mobile application for the EventEase platform.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This is the Flutter client application for EventEase, an event discovery and planning app.
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+- Flutter SDK (latest stable version)
+- Dart SDK
+- iOS development: Xcode and CocoaPods
+- Android development: Android Studio and Android SDK
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Setup
+
+1. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+
+2. Configure Firebase:
+   - Firebase configuration is already set up via `firebase_options.dart`
+   - Ensure you have the correct Firebase project selected
+
+3. Run the app:
+   ```bash
+   flutter run
+   ```
+
+### Project Structure
+
+- `lib/` - Main application code
+- `lib/screens/` - UI screens
+- `lib/components/` - Reusable UI components
+- `lib/providers/` - State management (Provider)
+- `lib/services/` - Business logic and API services
+- `lib/models/` - Data models
+
+For more information, see the main [README.md](../README.md) in the project root.

@@ -1,10 +1,10 @@
-# RecipEase Build Automation
+# EventEase Build Automation
 # Ensures ShareExtension is properly embedded in iOS builds
 
 .PHONY: help ios-debug ios-release ios-simulator clean embed-shareext
 
 help: ## Show this help message
-	@echo "RecipEase Build Commands:"
+	@echo "EventEase Build Commands:"
 	@echo ""
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'banner_ad.dart';
 import 'offline_banner.dart';
+import 'floating_bottom_bar.dart';
 
 class PersistentBannerLayout extends StatelessWidget {
   final Widget child;
@@ -23,9 +24,12 @@ class PersistentBannerLayout extends StatelessWidget {
             routeName != '/importEvent' &&
             routeName != '/planner' &&
             routeName != '/home' &&
+            routeName != '/discover' &&
             routeName != '/settings' &&
             routeName != '/subscription')
           const BannerAdWidget(),
+        // Floating navigation shell (Recipease-style).
+        const FloatingBottomBar(),
       ],
     );
   }

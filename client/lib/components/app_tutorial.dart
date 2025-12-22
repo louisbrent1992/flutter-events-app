@@ -62,7 +62,9 @@ class _AppTutorialState extends State<AppTutorial> {
         }
       },
       enableAutoScroll: true,
-      scrollDuration: const Duration(milliseconds: 500), // Slower, smoother scroll
+      scrollDuration: const Duration(
+        milliseconds: 500,
+      ), // Slower, smoother scroll
       blurValue: 0, // Disable blur for better performance
     );
   }
@@ -83,15 +85,15 @@ class _AppTutorialState extends State<AppTutorial> {
 /// Uses a microtask to ensure it runs after the current build cycle completes
 void startTutorial(BuildContext context, List<GlobalKey> keys) {
   if (keys.isEmpty) return;
-  
+
   // Clear manual restart flag since tutorial is starting
   TutorialService().clearManualRestartFlag();
-  
+
   // Use scheduleMicrotask to ensure this runs after current frame completes
   // This prevents stuttering by ensuring all widgets are fully built
   scheduleMicrotask(() {
     try {
-  ShowcaseView.get().startShowCase(keys);
+      ShowcaseView.get().startShowCase(keys);
     } catch (e) {
       debugPrint('❌ Error starting showcase: $e');
     }
@@ -99,6 +101,7 @@ void startTutorial(BuildContext context, List<GlobalKey> keys) {
 }
 
 /// Tutorial showcase wrapper widget with advanced styling
+/// Safely handles cases where ShowcaseView is not yet registered
 class TutorialShowcase extends StatelessWidget {
   final GlobalKey showcaseKey;
   final String title;
@@ -119,18 +122,34 @@ class TutorialShowcase extends StatelessWidget {
     this.isCircular = false,
   });
 
+  /// Check if ShowcaseView is registered without throwing
+  static bool _isShowcaseViewRegistered() {
+    try {
+      ShowcaseView.get();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Check if ShowcaseView is registered before creating Showcase widget
+    // This prevents the error that occurs in Showcase's initState()
+    if (!_isShowcaseViewRegistered()) {
+      // ShowcaseView is not registered, return child without Showcase wrapper
+      return child;
+    }
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     // Determine shape border
-    final ShapeBorder shapeBorder = targetShapeBorder ?? 
-        (isCircular 
-            ? const CircleBorder() 
-            : RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ));
+    final ShapeBorder shapeBorder =
+        targetShapeBorder ??
+        (isCircular
+            ? const CircleBorder()
+            : RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)));
 
     return Showcase(
       key: showcaseKey,
@@ -151,14 +170,12 @@ class TutorialShowcase extends StatelessWidget {
         color: colorScheme.onSurface.withValues(alpha: 0.8),
         height: 1.4,
       ),
-      tooltipPadding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 16,
-      ),
+      tooltipPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       tooltipBorderRadius: BorderRadius.circular(16),
       // Animation settings - stable to prevent stuttering
       movingAnimationDuration: const Duration(milliseconds: 300),
-      disableMovingAnimation: true, // Disable moving animation to prevent vertical jitter
+      disableMovingAnimation:
+          true, // Disable moving animation to prevent vertical jitter
       scaleAnimationDuration: const Duration(milliseconds: 300),
       scaleAnimationCurve: Curves.easeOutQuart,
       disableScaleAnimation: true, // Keep target size stable

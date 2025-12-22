@@ -1,6 +1,6 @@
-# <img src="client/assets/icons/logo.png" alt="Recipease Logo" width="32" height="32" style="vertical-align:middle; margin-right:8px;"> RecipEase Kitchen App
+# <img src="client/assets/icons/logo.png" alt="EventEase Logo" width="32" height="32" style="vertical-align:middle; margin-right:8px;"> EventEase App
 
-A mobile application that allows users to generate unique recipes using AI, manage personal recipe collections, and easily import recipe details from shared social media posts.
+A mobile application that allows users to discover, plan, and manage events. Import events from social media, generate AI-powered event plans, and keep track of your schedule.
 
 ## Table of Contents
 
@@ -16,30 +16,29 @@ A mobile application that allows users to generate unique recipes using AI, mana
 
 ## Project Overview
 
-**Purpose:** This app is designed for home cooks, food enthusiasts, and anyone looking for culinary inspiration. It leverages AI to create personalized recipes based on user inputs and provides a platform for managing and sharing recipes.
+**Purpose:** This app is designed for event enthusiasts, planners, and anyone looking to discover and manage events. It leverages AI to help plan events and provides a platform for importing, organizing, and tracking events from various sources.
 
 ## Core Features
 
-### A. AI-Generated Recipe Creation
+### A. AI-Powered Event Planning
 
-- Users can specify ingredients, dietary restrictions, and cuisine types.
-- If no inputs are provided, the app will use default random values for ingredients, dietary restrictions, and cuisine types.
-- Integration with an AI service to generate recipes based on user inputs.
-- Customization options for cooking time, difficulty level, and nutritional information.
+- Generate personalized event plans using AI
+- Customize event details, timing, and activities
+- Smart suggestions based on event type and preferences
 
-### B. Recipe Management
+### B. Event Management
 
-- CRUD operations for personal recipe collections.
-- Categorization and tagging of recipes.
-- Favorites and bookmarks for quick access.
-- Search and filter functionality.
+- CRUD operations for personal event collections
+- Categorization and organization of events
+- Calendar integration and scheduling
+- Search and filter functionality
 
-### C. Social Media Recipe Import
+### C. Social Media Event Import
 
-- Deep linking to handle shared social media content.
-- Parsing engine to extract recipe details from social media posts.
-- Validation and editing of imported data.
-- Direct integration with Instagram to retrieve captions and images.
+- Deep linking to handle shared event content
+- Parsing engine to extract event details from social media posts
+- Import from Instagram, TikTok, YouTube, and web URLs
+- Validation and editing of imported event data
 
 ## Technology Stack
 
@@ -52,13 +51,13 @@ A mobile application that allows users to generate unique recipes using AI, mana
 
 ## Getting Started
 
-To get started with the Flutter Recipe App, follow these steps:
+To get started with the EventEase App, follow these steps:
 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/flutter-recipe-app.git
-   cd flutter-recipe-app
+   git clone https://github.com/louisbrent1992/flutter-events-app.git
+   cd flutter-events-app
    ```
 
 2. Navigate to the client directory and install dependencies:
@@ -91,27 +90,20 @@ To get started with the Flutter Recipe App, follow these steps:
    npm run dev
    ```
 
-## Instagram Integration
+## Social Media Integration
 
-This app integrates with Instagram posts to extract recipe information from captions. To set up the Instagram integration:
+This app integrates with Instagram, TikTok, and YouTube to extract event information. To set up the integration:
 
 1. Sign up for a RapidAPI key at [RapidAPI](https://rapidapi.com/)
 2. Subscribe to the [RocketAPI for Developers](https://rapidapi.com/rocketapi-rocketapi-default/api/rocketapi-for-developers/)
 3. Add your API key to the `.env` file as `RAPID_API_KEY`
 
-To test the Instagram integration:
-
-```bash
-cd server
-node test-instagram.js https://www.instagram.com/p/SHORTCODE/
-```
-
 The integration allows the app to:
 
-- Extract captions from Instagram posts
-- Retrieve the image from the post
-- Process the caption with AI to identify recipe details
-- Create a recipe entry with metadata from Instagram
+- Extract event details from social media posts
+- Retrieve images and metadata from posts
+- Process content with AI to identify event information
+- Create event entries with metadata from social media
 
 ## Screenshots
 
@@ -119,15 +111,15 @@ The integration allows the app to:
 
 ---
 
-![AI Recipe Screen](client/assets/screenshots/ai_recipe_screen.png)
+![AI Planner Screen](client/assets/screenshots/ai_recipe_screen.png)
 
 ---
 
-![Recipe List Screen](client/assets/screenshots/recipe_list_screen.png)
+![Event List Screen](client/assets/screenshots/recipe_list_screen.png)
 
 ## Social Sharing Integration
 
-The app supports seamless recipe sharing through iOS and Android share extensions:
+The app supports seamless event sharing through iOS and Android share extensions:
 
 ### Share Handler Integration
 - **Enhanced Sharing**: Uses the `share_handler` package for robust sharing functionality
@@ -136,10 +128,10 @@ The app supports seamless recipe sharing through iOS and Android share extension
 - **Cross-Platform**: Works consistently across iOS and Android platforms
 
 ### How It Works
-1. Users can share recipe URLs from any app (Safari, Instagram, etc.)
+1. Users can share event URLs from any app (Safari, Instagram, etc.)
 2. The share extension captures the shared content automatically
-3. The app processes the shared URL and extracts recipe information
-4. Users can review and save the imported recipe to their collection
+3. The app processes the shared URL and extracts event information
+4. Users can review and save the imported event to their collection
 
 ## Firebase Integration
 

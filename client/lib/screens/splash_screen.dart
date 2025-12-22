@@ -28,12 +28,14 @@ class _SplashScreenState extends State<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-    _scale = Tween<double>(begin: 0.95, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _fade = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _scale = Tween<double>(
+      begin: 0.95,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _controller.forward();
     _boot();
   }
@@ -61,7 +63,11 @@ class _SplashScreenState extends State<SplashScreen>
         Navigator.pushReplacementNamed(context, '/home');
         return;
       }
-      Navigator.pushReplacementNamed(context, '/importEvent', arguments: pendingUrl);
+      Navigator.pushReplacementNamed(
+        context,
+        '/importEvent',
+        arguments: pendingUrl,
+      );
       return;
     }
 
@@ -72,12 +78,18 @@ class _SplashScreenState extends State<SplashScreen>
         final route = obj['route'] as String?;
         final args = obj['args'] as Map<String, dynamic>?;
 
-        if (route == '/eventDetail' && args != null && args['eventId'] != null) {
+        if (route == '/eventDetail' &&
+            args != null &&
+            args['eventId'] != null) {
           final eventId = args['eventId'] as String;
           try {
             final resp = await EventService.getEventById(eventId);
             if (resp.success && resp.data != null && mounted) {
-              Navigator.pushReplacementNamed(context, '/eventDetail', arguments: resp.data);
+              Navigator.pushReplacementNamed(
+                context,
+                '/eventDetail',
+                arguments: resp.data,
+              );
               return;
             }
           } catch (_) {}
@@ -94,6 +106,8 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     if (!mounted) return;
+
+    // Route to the normal home entry. The floating nav shell handles the rest.
     Navigator.pushReplacementNamed(context, '/home');
   }
 
@@ -136,6 +150,3 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 }
-
-
-

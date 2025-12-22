@@ -4,7 +4,7 @@
 			"android": {
 				"default": {
 					"projectId": "eventease-70a25",
-					"appId": "1:826154873845:android:ceb9215bba4474ea5be6bc",
+					"appId": "1:378901243002:android:d178010a90a0e7d4acc7c3",
 					"fileOutput": "android/app/google-services.json"
 				}
 			},
@@ -12,12 +12,17 @@
 				"lib/firebase_options.dart": {
 					"projectId": "eventease-70a25",
 					"configurations": {
-						"android": "1:826154873845:android:ceb9215bba4474ea5be6bc",
-						"ios": "1:826154873845:ios:a9a2ed9cc06ecc595be6bc",
-						"macos": "1:826154873845:ios:a9a2ed9cc06ecc595be6bc",
-						"web": "1:826154873845:web:3af1668ffa073a015be6bc",
-						"windows": "1:826154873845:web:3af1668ffa073a015be6bc"
+						"android": "1:378901243002:android:d178010a90a0e7d4acc7c3",
+						"ios": "1:378901243002:ios:c94dd3c512fdac69acc7c3"
 					}
+				}
+			},
+			"ios": {
+				"default": {
+					"projectId": "eventease-70a25",
+					"appId": "1:378901243002:ios:c94dd3c512fdac69acc7c3",
+					"uploadDebugSymbols": false,
+					"fileOutput": "ios/Runner/GoogleService-Info.plist"
 				}
 			}
 		}

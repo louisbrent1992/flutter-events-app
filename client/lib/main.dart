@@ -24,10 +24,20 @@ import 'package:eventease/components/dynamic_background.dart';
 import 'package:eventease/services/event_service.dart';
 import 'package:eventease/models/event.dart';
 import 'package:eventease/screens/my_events_screen.dart';
+import 'package:eventease/providers/discover_provider.dart';
+import 'package:eventease/providers/collection_provider.dart';
 import 'package:eventease/screens/create_event_screen.dart';
 import 'package:eventease/screens/event_detail_screen.dart';
 import 'package:eventease/screens/import_event_screen.dart';
 import 'package:eventease/screens/ai_planner_screen.dart';
+import 'package:eventease/screens/discover_events_screen.dart';
+import 'package:eventease/screens/event_collections_screen.dart';
+import 'package:eventease/screens/collection_detail_screen.dart';
+import 'package:eventease/screens/add_events_to_collection_screen.dart';
+import 'package:eventease/providers/generated_plan_provider.dart';
+import 'package:eventease/screens/generated_plans_screen.dart';
+import 'package:eventease/screens/generated_plan_detail_screen.dart';
+import 'package:eventease/screens/random_event_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:eventease/services/permission_service.dart';
@@ -559,7 +569,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       } else {
         Future.delayed(const Duration(milliseconds: 500), () {
           if (navigatorKey.currentState != null) {
-            navigatorKey.currentState!.pushNamed('/importEvent', arguments: url);
+            navigatorKey.currentState!.pushNamed(
+              '/importEvent',
+              arguments: url,
+            );
           }
         });
       }
@@ -589,14 +602,42 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   }
 
   static final Map<String, Widget Function(dynamic)> _routes = {
-    '/myEvents': (args) => const PersistentBannerLayout(child: MyEventsScreen()),
+    '/discover':
+        (args) => const PersistentBannerLayout(child: DiscoverEventsScreen()),
+    '/collections':
+        (args) => const PersistentBannerLayout(child: EventCollectionsScreen()),
+    '/collectionDetail': (args) {
+      final collectionId =
+          (args is Map && args['collectionId'] != null)
+              ? args['collectionId'] as String
+              : '';
+      return PersistentBannerLayout(
+        child: CollectionDetailScreen(collectionId: collectionId),
+      );
+    },
+    '/addEventsToCollection': (args) {
+      final collectionId =
+          (args is Map && args['collectionId'] != null)
+              ? args['collectionId'] as String
+              : '';
+      return PersistentBannerLayout(
+        child: AddEventsToCollectionScreen(collectionId: collectionId),
+      );
+    },
+    '/myEvents':
+        (args) => const PersistentBannerLayout(child: MyEventsScreen()),
     '/createEvent':
         (args) => const PersistentBannerLayout(child: CreateEventScreen()),
     '/eventDetail':
-        (args) => PersistentBannerLayout(child: EventDetailScreen(event: args as Event)),
+        (args) => PersistentBannerLayout(
+          child: EventDetailScreen(event: args as Event),
+        ),
     '/importEvent':
-        (args) => PersistentBannerLayout(child: ImportEventScreen(sharedUrl: args as String?)),
-    '/planner': (args) => const PersistentBannerLayout(child: AiPlannerScreen()),
+        (args) => PersistentBannerLayout(
+          child: ImportEventScreen(sharedUrl: args as String?),
+        ),
+    '/planner':
+        (args) => const PersistentBannerLayout(child: AiPlannerScreen()),
     '/splash': (args) => const SplashScreen(),
     '/home': (args) => const PersistentBannerLayout(child: HomeScreen()),
     '/login': (args) => const LoginScreen(),
@@ -608,6 +649,19 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (args) => const PersistentBannerLayout(child: SettingsScreen()),
     '/subscription':
         (args) => const PersistentBannerLayout(child: SubscriptionScreen()),
+    '/generated':
+        (args) => const PersistentBannerLayout(child: GeneratedPlansScreen()),
+    '/generatedDetail': (args) {
+      final planId =
+          (args is Map && args['planId'] != null)
+              ? args['planId'] as String
+              : '';
+      return PersistentBannerLayout(
+        child: GeneratedPlanDetailScreen(planId: planId),
+      );
+    },
+    '/random':
+        (args) => const PersistentBannerLayout(child: RandomEventScreen()),
   };
 
   @override
@@ -618,6 +672,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => UserProfileProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => EventProvider()),
+        ChangeNotifierProvider(create: (_) => DiscoverProvider()),
+        ChangeNotifierProvider(create: (_) => CollectionProvider()),
+        ChangeNotifierProvider(create: (_) => GeneratedPlanProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
         ChangeNotifierProvider(create: (_) => DynamicUiProvider()),
         ChangeNotifierProvider(create: (_) => ConnectivityProvider()),
@@ -654,6 +711,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 '/createEvent',
                 '/importEvent',
                 '/planner',
+                '/collections',
+                '/collectionDetail',
+                '/addEventsToCollection',
+                '/generated',
+                '/generatedDetail',
                 '/subscription',
               };
 
@@ -722,25 +784,31 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                 );
               };
 
-              return Consumer<DynamicUiProvider>(
-                builder: (context, dyn, _) {
-                  final hasBg = dyn.config?.globalBackground != null;
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  return Consumer<DynamicUiProvider>(
+                    builder: (context, dyn, _) {
+                      final hasBg = dyn.config?.globalBackground != null;
 
-                  return Stack(
-                    children: [
-                      // The Persistent Background
-                      if (hasBg)
-                        const Positioned.fill(
-                          child: RepaintBoundary(
-                            child: DynamicGlobalBackground(),
+                      return Stack(
+                        children: [
+                          // The Persistent Background
+                          if (hasBg)
+                            const Positioned.fill(
+                              child: RepaintBoundary(
+                                child: DynamicGlobalBackground(),
+                              ),
+                            ),
+                          // The App Content
+                          Positioned.fill(
+                            child: Scaffold(
+                              backgroundColor: Colors.transparent,
+                              body: child ?? const SizedBox.shrink(),
+                            ),
                           ),
-                        ),
-                      // The App Content
-                      Scaffold(
-                        backgroundColor: Colors.transparent,
-                        body: child ?? const SizedBox.shrink(),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   );
                 },
               );

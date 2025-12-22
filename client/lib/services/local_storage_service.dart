@@ -14,15 +14,18 @@ class LocalStorageService {
   factory LocalStorageService() => _instance;
 
   static const String _userEventsBox = 'user_events';
+  static const String _discoverEventsBox = 'discover_events';
   static const String _metadataBox = 'storage_metadata';
 
   static const Duration _eventsCacheDuration = Duration(days: 7);
 
   Box? _userEventsBoxInstance;
+  Box? _discoverEventsBoxInstance;
   Box? _metadataBoxInstance;
 
   Future<void> initialize() async {
     _userEventsBoxInstance ??= await Hive.openBox(_userEventsBox);
+    _discoverEventsBoxInstance ??= await Hive.openBox(_discoverEventsBox);
     _metadataBoxInstance ??= await Hive.openBox(_metadataBox);
     if (kDebugMode) {
       debugPrint('✅ LocalStorageService: initialized');
@@ -41,6 +44,13 @@ class LocalStorageService {
       await initialize();
     }
     return _metadataBoxInstance!;
+  }
+
+  Future<Box> _discoverBox() async {
+    if (_discoverEventsBoxInstance == null) {
+      await initialize();
+    }
+    return _discoverEventsBoxInstance!;
   }
 
   // ==================== User Events ====================
@@ -102,6 +112,36 @@ class LocalStorageService {
     await saveUserEvents(next);
   }
 
+  // ==================== Discover Events ====================
+
+  Future<void> saveDiscoverEvents(List<Event> events) async {
+    final box = await _discoverBox();
+    final eventsJson = events.map((e) => e.toJson()).toList();
+    await box.put('events', eventsJson);
+    await setLastSyncTime('discover', DateTime.now());
+  }
+
+  Future<List<Event>> loadDiscoverEvents({bool allowStale = true}) async {
+    final box = await _discoverBox();
+    final lastSync = await getLastSyncTime('discover');
+    if (!allowStale && lastSync != null) {
+      if (DateTime.now().difference(lastSync) > _eventsCacheDuration) {
+        return [];
+      }
+    }
+
+    final raw = box.get('events') as List?;
+    if (raw == null) return [];
+    return raw.map((json) {
+      if (json is Map) {
+        final Map<String, dynamic> converted = {};
+        json.forEach((k, v) => converted[k.toString()] = v);
+        return Event.fromJson(converted);
+      }
+      return Event.fromJson(json as Map<String, dynamic>);
+    }).toList();
+  }
+
   // ==================== Metadata ====================
 
   Future<void> setLastSyncTime(String dataType, DateTime when) async {
@@ -118,10 +158,10 @@ class LocalStorageService {
 
   Future<void> clearAll() async {
     final eventsBox = await _eventsBox();
+    final discoverBox = await _discoverBox();
     final metaBox = await _metaBox();
     await eventsBox.clear();
+    await discoverBox.clear();
     await metaBox.clear();
   }
 }
-
-

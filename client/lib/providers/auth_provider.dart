@@ -157,20 +157,9 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Configure auth persistence based on platform
-      if (kIsWeb) {
-        await _auth.setPersistence(Persistence.LOCAL);
-      }
-
-      // Attempt sign in with platform-specific configuration
+      // Attempt sign in (mobile platforms only)
       UserCredential userCredential;
-      if (kIsWeb) {
-        // Web platform requires reCAPTCHA
-        userCredential = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
-      } else {
+      {
         // Mobile platforms don't require reCAPTCHA
         userCredential = await _auth.signInWithEmailAndPassword(
           email: email,
@@ -237,11 +226,6 @@ class AuthService with ChangeNotifier {
       _isLoading = true;
       _error = null;
       notifyListeners();
-
-      // Only set persistence on web platforms
-      if (kIsWeb) {
-        await _auth.setPersistence(Persistence.LOCAL);
-      }
 
       final UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -687,25 +671,8 @@ class AuthService with ChangeNotifier {
     notifyListeners();
 
     try {
-      if (kIsWeb) {
-        // Web platform requires ActionCodeSettings for password reset
-        // Construct the redirect URL to send users back to login after reset
-        final uri = Uri.base;
-        final continueUrl = uri.resolveUri(Uri(path: '/#/login')).toString();
-
-        final actionCodeSettings = ActionCodeSettings(
-          url: continueUrl,
-          handleCodeInApp: false,
-        );
-
-        await _auth.sendPasswordResetEmail(
-          email: email,
-          actionCodeSettings: actionCodeSettings,
-        );
-      } else {
-        // Mobile platforms don't require ActionCodeSettings
-        await _auth.sendPasswordResetEmail(email: email);
-      }
+      // Mobile platforms don't require ActionCodeSettings
+      await _auth.sendPasswordResetEmail(email: email);
       return true;
     } on FirebaseAuthException catch (e) {
       switch (e.code) {

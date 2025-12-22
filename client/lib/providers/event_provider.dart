@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/api_response.dart';
 import '../models/event.dart';
 import '../services/event_service.dart';
+import '../services/local_storage_service.dart';
 
 class EventProvider extends ChangeNotifier {
   final StreamController<void> _eventsChangedController =
@@ -53,16 +54,41 @@ class EventProvider extends ChangeNotifier {
     int limit = 20,
     bool forceRefresh = false,
   }) async {
+    // Prevent concurrent loads
+    if (_isLoading && !forceRefresh) {
+      return;
+    }
+
+    // If events are already loaded and not forcing refresh, skip
+    if (!forceRefresh && _userEvents.isNotEmpty && page == 1) {
+      return;
+    }
+
     clearError();
     _setLoading(true);
 
     try {
-      final response = await EventService.getUserEvents(page: page, limit: limit);
+      final response = await EventService.getUserEvents(
+        page: page,
+        limit: limit,
+      );
       if (response.success && response.data != null) {
         final events = response.data!['events'] as List<Event>? ?? <Event>[];
-        final pagination = response.data!['pagination'] as Map<String, dynamic>?;
+        final pagination =
+            response.data!['pagination'] as Map<String, dynamic>?;
 
         _userEvents = events;
+
+        // Cache for offline use (best-effort)
+        try {
+          final total = (pagination?['total'] as int?) ?? events.length;
+          final totalPages = (pagination?['totalPages'] as int?) ?? 1;
+          await LocalStorageService().saveUserEvents(
+            events,
+            totalEvents: total,
+            totalPages: totalPages,
+          );
+        } catch (_) {}
 
         if (pagination != null) {
           _currentPage = pagination['page'] ?? page;
@@ -80,9 +106,35 @@ class EventProvider extends ChangeNotifier {
 
         notifyListeners();
       } else {
+        // Fallback to cache if available
+        try {
+          final cached = await LocalStorageService().loadUserEvents();
+          if (cached.isNotEmpty) {
+            _userEvents = cached;
+            _currentPage = 1;
+            _totalPages = 1;
+            _hasNextPage = false;
+            _hasPrevPage = false;
+            _totalEvents = cached.length;
+            notifyListeners();
+          }
+        } catch (_) {}
         _setError(response.message ?? 'Failed to load events');
       }
     } catch (e) {
+      // Fallback to cache if available
+      try {
+        final cached = await LocalStorageService().loadUserEvents();
+        if (cached.isNotEmpty) {
+          _userEvents = cached;
+          _currentPage = 1;
+          _totalPages = 1;
+          _hasNextPage = false;
+          _hasPrevPage = false;
+          _totalEvents = cached.length;
+          notifyListeners();
+        }
+      } catch (_) {}
       _setError(e.toString());
     } finally {
       _setLoading(false);
@@ -140,5 +192,3 @@ class EventProvider extends ChangeNotifier {
     super.dispose();
   }
 }
-
-

@@ -37,6 +37,54 @@ class UserProfileProvider with ChangeNotifier {
       final doc = await _firestore.collection('users').doc(user.uid).get();
       if (doc.exists) {
         _profile = doc.data() ?? {};
+      } else {
+        // User document doesn't exist, create it with basic info from Firebase Auth
+        _profile = {
+          'displayName': user.displayName,
+          'email': user.email,
+          'photoURL': user.photoURL,
+          'uid': user.uid,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+        // Try to create the document (may fail if rules don't allow, but that's okay)
+        try {
+          await _firestore.collection('users').doc(user.uid).set(_profile);
+        } catch (createError) {
+          // If creation fails due to permissions, that's okay - we'll use the local profile
+          debugPrint(
+            'Note: Could not create user document (may need Firestore rules deployed): $createError',
+          );
+        }
+      }
+    } on FirebaseException catch (e) {
+      // Handle Firestore permission errors gracefully
+      if (e.code == 'permission-denied') {
+        // If permission denied, try to create the document (user might not exist yet)
+        try {
+          final user = _auth.currentUser;
+          if (user != null) {
+            _profile = {
+              'displayName': user.displayName,
+              'email': user.email,
+              'photoURL': user.photoURL,
+              'uid': user.uid,
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            };
+            await _firestore.collection('users').doc(user.uid).set(_profile);
+            debugPrint('Created user document after permission error');
+          }
+        } catch (createError) {
+          // If creation also fails, just use empty profile - rules may need to be deployed
+          _profile = {};
+          _error =
+              'Firestore rules may need to be deployed. Profile unavailable.';
+          debugPrint('Error creating user document: $createError');
+        }
+      } else {
+        _error = e.toString();
+        debugPrint('Error loading profile: $e');
       }
     } catch (e) {
       _error = e.toString();
@@ -75,7 +123,9 @@ class UserProfileProvider with ChangeNotifier {
         await user.getIdToken(true);
       } catch (e) {
         // If reload fails, log but continue - the update might still work
-        debugPrint('Note: Could not refresh auth token (continuing anyway): $e');
+        debugPrint(
+          'Note: Could not refresh auth token (continuing anyway): $e',
+        );
       }
 
       // Check if user document exists
@@ -221,7 +271,9 @@ class UserProfileProvider with ChangeNotifier {
       } catch (e) {
         // If updatePhotoURL doesn't accept null, that's fine
         // The app uses Firestore as source of truth, so deletion in Firestore is sufficient
-        debugPrint('Note: Could not delete photoURL from Firebase Auth (this is okay): $e');
+        debugPrint(
+          'Note: Could not delete photoURL from Firebase Auth (this is okay): $e',
+        );
       }
 
       await loadProfile(); // Reload profile after deletion

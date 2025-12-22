@@ -109,33 +109,30 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
       actions: [
         if (showCreditsPill)
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
-            child: CreditsPill(
-              compact: useCompactCredits,
-              onTap: () {
-                if (context.read<AuthService>().user == null) {
-                  SnackBarHelper.showInfo(
-                    context,
-                    'Sign in to manage subscriptions and credits.',
-                    action: SnackBarAction(
-                      label: 'Sign in',
-                      onPressed:
-                          () => Navigator.pushNamed(
-                            context,
-                            '/login',
-                            arguments: {'redirectRoute': '/subscription'},
-                          ),
-                    ),
-                  );
-                  return;
-                }
-                Navigator.pushNamed(context, '/subscription');
-              },
-              hasActionsToRight:
-                  (floatingButtons != null && floatingButtons!.isNotEmpty) ||
-                  (actions != null && actions!.isNotEmpty),
-            ),
+          CreditsPill(
+            compact: useCompactCredits,
+            onTap: () {
+              if (context.read<AuthService>().user == null) {
+                SnackBarHelper.showInfo(
+                  context,
+                  'Sign in to manage subscriptions and credits.',
+                  action: SnackBarAction(
+                    label: 'Sign in',
+                    onPressed:
+                        () => Navigator.pushNamed(
+                          context,
+                          '/login',
+                          arguments: {'redirectRoute': '/subscription'},
+                        ),
+                  ),
+                );
+                return;
+              }
+              Navigator.pushNamed(context, '/subscription');
+            },
+            hasActionsToRight:
+                (floatingButtons != null && floatingButtons!.isNotEmpty) ||
+                (actions != null && actions!.isNotEmpty),
           ),
         if (floatingButtons != null) ...floatingButtons!,
         if (actions != null) ...actions!,

@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "378901243002",
+    "firebase_url": "https://eventease-70a25-default-rtdb.firebaseio.com",
     "project_id": "eventease-70a25",
     "storage_bucket": "eventease-70a25.firebasestorage.app"
   },
@@ -12,7 +13,12 @@
           "package_name": "com.eventease.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "378901243002-979dor1il9uovkpnfj9fdfn5r56vn1pt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDPlf8w9jJTFdhAfAmvULR7JZcGP1HDfw8"
@@ -20,7 +26,55 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378901243002-979dor1il9uovkpnfj9fdfn5r56vn1pt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "378901243002-qsdd0nmb18nclg66oc3i0v06t1a424lt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eventease.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:378901243002:android:d178010a90a0e7d4acc7c3",
+        "android_client_info": {
+          "package_name": "com.eventease.com"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "378901243002-979dor1il9uovkpnfj9fdfn5r56vn1pt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPlf8w9jJTFdhAfAmvULR7JZcGP1HDfw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "378901243002-979dor1il9uovkpnfj9fdfn5r56vn1pt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "378901243002-qsdd0nmb18nclg66oc3i0v06t1a424lt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.eventease.app"
+              }
+            }
+          ]
         }
       }
     }

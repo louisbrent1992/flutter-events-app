@@ -2,7 +2,7 @@
 // ignore_for_file: type=lint
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
-    show defaultTargetPlatform, kIsWeb, TargetPlatform;
+    show defaultTargetPlatform, TargetPlatform;
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -16,44 +16,22 @@ import 'package:flutter/foundation.dart'
 /// ```
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) {
-      return web;
-    }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
-      case TargetPlatform.windows:
-        return windows;
-      case TargetPlatform.linux:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
       default:
         throw UnsupportedError(
-          'DefaultFirebaseOptions are not supported for this platform.',
+          'DefaultFirebaseOptions are not supported for this platform. '
+          'Only iOS and Android are supported.',
         );
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDPlf8w9jJTFdhAfAmvULR7JZcGP1HDfw8',
-    appId: '1:378901243002:web:YOUR_WEB_APP_ID',
-    messagingSenderId: '378901243002',
-    projectId: 'eventease-70a25',
-    authDomain: 'eventease-70a25.firebaseapp.com',
-    databaseURL: 'https://eventease-70a25-default-rtdb.firebaseio.com',
-    storageBucket: 'eventease-70a25.firebasestorage.app',
-    measurementId: 'G-YOUR_MEASUREMENT_ID',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDPlf8w9jJTFdhAfAmvULR7JZcGP1HDfw8',
-    appId: '1:378901243002:android:3844cd69e72d05b0acc7c3',
+    appId: '1:378901243002:android:d178010a90a0e7d4acc7c3',
     messagingSenderId: '378901243002',
     projectId: 'eventease-70a25',
     databaseURL: 'https://eventease-70a25-default-rtdb.firebaseio.com',
@@ -61,41 +39,14 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
+    apiKey: 'AIzaSyDv-w0Dp6bWKPx7VGoY48yxTAPuYJxpRZ4',
+    appId: '1:378901243002:ios:c94dd3c512fdac69acc7c3',
     messagingSenderId: '378901243002',
     projectId: 'eventease-70a25',
     databaseURL: 'https://eventease-70a25-default-rtdb.firebaseio.com',
     storageBucket: 'eventease-70a25.firebasestorage.app',
-    androidClientId:
-        'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
     iosClientId:
-        'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
+        '378901243002-qsdd0nmb18nclg66oc3i0v06t1a424lt.apps.googleusercontent.com',
     iosBundleId: 'com.eventease.app',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: '378901243002',
-    projectId: 'eventease-70a25',
-    databaseURL: 'https://eventease-70a25-default-rtdb.firebaseio.com',
-    storageBucket: 'eventease-70a25.firebasestorage.app',
-    androidClientId:
-        'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    iosClientId:
-        'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    iosBundleId: 'com.eventease.app',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDPlf8w9jJTFdhAfAmvULR7JZcGP1HDfw8',
-    appId: '1:378901243002:web:YOUR_WEB_APP_ID',
-    messagingSenderId: '378901243002',
-    projectId: 'eventease-70a25',
-    authDomain: 'eventease-70a25.firebaseapp.com',
-    databaseURL: 'https://eventease-70a25-default-rtdb.firebaseio.com',
-    storageBucket: 'eventease-70a25.firebasestorage.app',
-    measurementId: 'G-YOUR_MEASUREMENT_ID',
   );
 }

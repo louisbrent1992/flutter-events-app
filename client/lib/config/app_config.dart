@@ -49,12 +49,12 @@ class AppConfig {
 
   /// Production API URL (your main Cloud Run service)
   static const String productionApiUrl =
-      'https://eventease-app-server-378901243002.us-west2.run.app/api';
+      'https://flutter-events-app-713794159070.us-west1.run.app/api';
 
   /// Staging API URL (separate Cloud Run service for testing)
   /// Update this after deploying your staging service
   static const String stagingApiUrl =
-      'https://eventease-app-server-staging-378901243002.us-west2.run.app/api';
+      'https://eventease-app-staging-713794159070.us-west1.run.app/api';
 
   /// Get the API URL for the current environment
   /// Note: Development URL is handled dynamically in ApiClient based on platform

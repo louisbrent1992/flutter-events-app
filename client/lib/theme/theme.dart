@@ -415,10 +415,6 @@ class AppTheme {
       builders: {
         TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
         TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
       },
     ),
     dividerColor: primaryColor,
@@ -513,10 +509,6 @@ class AppTheme {
       builders: {
         TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
         TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
       },
     ),
     useMaterial3: true,
@@ -538,8 +530,8 @@ class AppDialog {
       AppBreakpoints.isDesktop(context)
           ? 28
           : AppBreakpoints.isTablet(context)
-              ? 24
-              : 20,
+          ? 24
+          : 20,
     );
   }
 
@@ -548,8 +540,8 @@ class AppDialog {
     return AppBreakpoints.isDesktop(context)
         ? 24
         : AppBreakpoints.isTablet(context)
-            ? 22
-            : 20;
+        ? 22
+        : 20;
   }
 
   /// Get responsive content font size
@@ -557,8 +549,8 @@ class AppDialog {
     return AppBreakpoints.isDesktop(context)
         ? 16
         : AppBreakpoints.isTablet(context)
-            ? 15
-            : 14;
+        ? 15
+        : 14;
   }
 
   /// Get responsive border radius for dialogs
@@ -566,21 +558,23 @@ class AppDialog {
     return AppBreakpoints.isDesktop(context)
         ? 24
         : AppBreakpoints.isTablet(context)
-            ? 20
-            : 16;
+        ? 20
+        : 16;
   }
 
   /// Get responsive button padding
   static EdgeInsets responsiveButtonPadding(BuildContext context) {
     return EdgeInsets.symmetric(
-      horizontal: AppBreakpoints.isDesktop(context)
-          ? 24
-          : AppBreakpoints.isTablet(context)
+      horizontal:
+          AppBreakpoints.isDesktop(context)
+              ? 24
+              : AppBreakpoints.isTablet(context)
               ? 20
               : 16,
-      vertical: AppBreakpoints.isDesktop(context)
-          ? 14
-          : AppBreakpoints.isTablet(context)
+      vertical:
+          AppBreakpoints.isDesktop(context)
+              ? 14
+              : AppBreakpoints.isTablet(context)
               ? 12
               : 10,
     );

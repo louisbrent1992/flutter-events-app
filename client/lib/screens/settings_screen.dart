@@ -97,9 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 Text(
                                   displayName,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
+                                  style: Theme.of(context).textTheme.titleMedium
                                       ?.copyWith(fontWeight: FontWeight.w800),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -117,7 +115,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(width: 12),
                           if (!isAuthed)
                             FilledButton(
-                              onPressed: () => Navigator.pushNamed(context, '/login'),
+                              onPressed:
+                                  () => Navigator.pushNamed(context, '/login'),
                               child: const Text('Sign in'),
                             )
                           else
@@ -156,7 +155,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             children: [
                               Expanded(
                                 child: OutlinedButton(
-                                  onPressed: () => setState(() => _editingName = false),
+                                  onPressed:
+                                      () =>
+                                          setState(() => _editingName = false),
                                   child: const Text('Cancel'),
                                 ),
                               ),
@@ -173,16 +174,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           Row(
                             children: [
                               OutlinedButton.icon(
-                                onPressed: () => setState(() => _editingName = true),
+                                onPressed:
+                                    () => setState(() => _editingName = true),
                                 icon: const Icon(Icons.edit_rounded),
                                 label: const Text('Edit name'),
                               ),
                               const SizedBox(width: 10),
                               OutlinedButton.icon(
-                                onPressed: () => Navigator.pushNamed(context, '/subscription'),
-                                icon: const Icon(Icons.workspace_premium_rounded),
+                                onPressed:
+                                    () => Navigator.pushNamed(
+                                      context,
+                                      '/subscription',
+                                    ),
+                                icon: const Icon(
+                                  Icons.workspace_premium_rounded,
+                                ),
                                 label: Text(
-                                  subscription.isPremium ? 'Premium' : 'Subscription',
+                                  subscription.isPremium
+                                      ? 'Premium'
+                                      : 'Subscription',
                                 ),
                               ),
                             ],
@@ -196,6 +206,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 14),
+          if (isAuthed) ...[
+            _sectionTitle(context, 'Organizer tools'),
+            Card(
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.collections_bookmark_rounded),
+                    title: const Text('Collections'),
+                    subtitle: const Text('Group events into lists'),
+                    onTap: () => Navigator.pushNamed(context, '/collections'),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
           _sectionTitle(context, 'Appearance'),
           Card(
             child: SwitchListTile(
@@ -234,7 +260,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () async {
                   await auth.signOut();
                   if (!context.mounted) return;
-                  Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/home',
+                    (_) => false,
+                  );
                 },
               ),
             ),
@@ -242,13 +272,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 24),
           Center(
             child: Text(
-              'EventEase • v1.0.9',
+              'EventEase • v1.0.0',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
-                  ),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
             ),
           ),
         ],
@@ -272,5 +301,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
-

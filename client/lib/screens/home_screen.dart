@@ -4,45 +4,15 @@ import '../providers/auth_provider.dart';
 import '../theme/theme.dart';
 
 /// EventEase home: lightweight entrypoint.
-/// - If signed in: send user straight to My Events.
 /// - If guest: show a simple landing with auth + primary actions.
-class HomeScreen extends StatefulWidget {
+/// - If signed in: show quick actions (no auto-redirect; nav shell handles this).
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  bool _redirected = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-
-    if (_redirected) return;
-    final isAuthed = context.read<AuthService>().user != null;
-    if (isAuthed) {
-      _redirected = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/myEvents');
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isAuthed = context.watch<AuthService>().user != null;
-
-    if (isAuthed) {
-      // While redirecting.
-      return const Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -67,35 +37,65 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const Spacer(),
-              FilledButton(
-                onPressed:
-                    () => Navigator.pushNamed(
-                      context,
-                      '/login',
-                      arguments: {'redirectRoute': '/myEvents'},
-                    ),
-                child: const Text('Sign in'),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              OutlinedButton(
-                onPressed:
-                    () => Navigator.pushNamed(
-                      context,
-                      '/register',
-                      arguments: {'redirectRoute': '/myEvents'},
-                    ),
-                child: const Text('Create account'),
-              ),
-              SizedBox(height: AppSpacing.sm),
-              TextButton(
-                onPressed:
-                    () => Navigator.pushNamed(
-                      context,
-                      '/login',
-                      arguments: {'redirectRoute': '/importEvent'},
-                    ),
-                child: const Text('Import an event'),
-              ),
+              if (!isAuthed) ...[
+                FilledButton(
+                  onPressed:
+                      () => Navigator.pushNamed(
+                        context,
+                        '/login',
+                        arguments: {'redirectRoute': '/myEvents'},
+                      ),
+                  child: const Text('Sign in'),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                OutlinedButton(
+                  onPressed:
+                      () => Navigator.pushNamed(
+                        context,
+                        '/register',
+                        arguments: {'redirectRoute': '/myEvents'},
+                      ),
+                  child: const Text('Create account'),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed:
+                      () => Navigator.pushNamed(
+                        context,
+                        '/login',
+                        arguments: {'redirectRoute': '/importEvent'},
+                      ),
+                  child: const Text('Import an event'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/random'),
+                  child: const Text('Random event'),
+                ),
+              ] else ...[
+                FilledButton(
+                  onPressed: () => Navigator.pushNamed(context, '/importEvent'),
+                  child: const Text('Import an event'),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                OutlinedButton(
+                  onPressed: () => Navigator.pushNamed(context, '/planner'),
+                  child: const Text('AI Planner'),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                OutlinedButton(
+                  onPressed: () => Navigator.pushNamed(context, '/collections'),
+                  child: const Text('Collections'),
+                ),
+                SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/random'),
+                  child: const Text('Random event'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/myEvents'),
+                  child: const Text('Go to My Events'),
+                ),
+              ],
               SizedBox(height: AppSpacing.xl),
             ],
           ),
@@ -104,6 +104,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-
-
