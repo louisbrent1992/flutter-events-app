@@ -9,23 +9,25 @@ class DynamicUiProvider with ChangeNotifier {
 
   // Default fallback config for offline mode (matches server default)
   static DynamicUiConfig get _defaultConfig => DynamicUiConfig(
-        version: 1,
-        fetchedAt: DateTime.now(),
-        banners: [],
-        globalBackground: const DynamicBackgroundConfig(
-          colors: ['#FFF3E0', '#FFE0B2'], // soft seasonal gradient
-          animateGradient: true,
-          kenBurns: true,
-          opacity: 1.0,
-        ),
-        welcomeMessage: 'Welcome,',
-        heroSubtitle: 'What are you planning today?',
-        sectionVisibility: {
-          'yourEventsList': true,
-          'upcomingSection': true,
-          'featuresSection': true,
-        },
-      );
+    version: 1,
+    fetchedAt: DateTime.now(),
+    banners: [],
+    globalBackground: const DynamicBackgroundConfig(
+      // Match app theme primary/secondary (see theme.dart)
+      // Use light tints so logos/headers remain readable on top of the background.
+      colors: ['#E6F9FC', '#F1ECFF'], // light cyan tint → light purple tint
+      animateGradient: true,
+      kenBurns: true,
+      opacity: 1.0,
+    ),
+    welcomeMessage: 'Welcome,',
+    heroSubtitle: 'What are you planning today?',
+    sectionVisibility: {
+      'yourEventsList': true,
+      'upcomingSection': true,
+      'featuresSection': true,
+    },
+  );
 
   // Return config from server, or default fallback if offline
   DynamicUiConfig? get config => _config ?? _defaultConfig;
@@ -53,7 +55,8 @@ class DynamicUiProvider with ChangeNotifier {
   }
 
   List<DynamicBannerConfig> bannersForPlacement(String placement) {
-    final list = _config?.banners
+    final list =
+        _config?.banners
             .where((b) => b.placement == placement && b.isActive)
             .toList() ??
         [];
@@ -61,5 +64,3 @@ class DynamicUiProvider with ChangeNotifier {
     return list;
   }
 }
-
-

@@ -157,6 +157,7 @@ class _GeneratedPlanDetailScreenState extends State<GeneratedPlanDetailScreen> {
             ],
           ),
     );
+    if (!mounted) return;
     if (ok == true) {
       await context.read<GeneratedPlanProvider>().deletePlan(id);
       if (!mounted) return;

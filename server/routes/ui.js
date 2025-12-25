@@ -23,7 +23,9 @@ router.get("/ui/config", (req, res) => {
     globalBackground: {
       // Choose either imageUrl or colors (for gradient/solid)
       imageUrl: null,
-      colors: ["#FFF3E0", "#FFE0B2"], // soft seasonal gradient (light theme example)
+      // Match app theme primary/secondary (see client/lib/theme/theme.dart)
+      // Use light tints so logos/headers remain readable on top of the background.
+      colors: ["#E6F9FC", "#F1ECFF"], // light cyan tint → light purple tint
       animateGradient: true,
       kenBurns: true,
       opacity: 1.0

@@ -30,6 +30,7 @@ class _AddEventsToCollectionScreenState
       final collections = context.read<CollectionProvider>();
       await collections.loadCollectionDetail(widget.collectionId);
 
+      if (!mounted) return;
       final events = context.read<EventProvider>();
       if (!events.isLoading && events.userEvents.isEmpty) {
         await events.loadUserEvents();
@@ -127,7 +128,7 @@ class _AddEventsToCollectionScreenState
                                                   .removeEventFromActiveCollection(
                                                     e.id,
                                                   );
-                                              if (!mounted) return;
+                                              if (!context.mounted) return;
                                               SnackBarHelper.showInfo(
                                                 context,
                                                 'Removed from collection.',
@@ -141,7 +142,7 @@ class _AddEventsToCollectionScreenState
                                                   .addEventToActiveCollection(
                                                     e.id,
                                                   );
-                                              if (!mounted) return;
+                                              if (!context.mounted) return;
                                               SnackBarHelper.showSuccess(
                                                 context,
                                                 'Added to collection.',

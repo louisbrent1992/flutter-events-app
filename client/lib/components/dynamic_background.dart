@@ -20,7 +20,7 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
   late final Animation<Alignment> _endAlign;
   bool _wasAnimatingBeforeKeyboard = false;
   bool _wasAnimatingBeforeTransition = false;
-  
+
   // Dark blue gradient colors for dark mode animation
   static const List<Color> _darkModeGradientColors = [
     Color(0xFF1E2A44), // Deep dark blue
@@ -66,7 +66,7 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
     _controller.dispose();
     super.dispose();
   }
-  
+
   // Pause animation when route is being pushed
   @override
   void didPush() {
@@ -75,7 +75,7 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
       _controller.stop();
     }
   }
-  
+
   // Resume animation when route transition completes
   @override
   void didPopNext() {
@@ -84,7 +84,7 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
       _wasAnimatingBeforeTransition = false;
     }
   }
-  
+
   // Also pause when popping (swiping back)
   @override
   void didPop() {
@@ -93,7 +93,7 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
       _controller.stop();
     }
   }
-  
+
   // Resume when next route is pushed (transition complete)
   @override
   void didPushNext() {
@@ -107,9 +107,15 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
   void didChangeMetrics() {
     super.didChangeMetrics();
     // Detect keyboard visibility by checking bottom view insets
-    final bottomInset = WidgetsBinding
-        .instance.platformDispatcher.views.first.viewInsets.bottom;
-    
+    final bottomInset =
+        WidgetsBinding
+            .instance
+            .platformDispatcher
+            .views
+            .first
+            .viewInsets
+            .bottom;
+
     if (bottomInset > 0) {
       // Keyboard is visible - pause animation to prevent stuttering
       if (_controller.isAnimating) {
@@ -153,7 +159,10 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                         bg.imageUrl!,
                         fit: BoxFit.cover,
                         alignment: Alignment.center,
-                        color: isDarkMode ? Colors.black.withValues(alpha: 0.3) : null,
+                        color:
+                            isDarkMode
+                                ? Colors.black.withValues(alpha: 0.3)
+                                : null,
                         colorBlendMode: isDarkMode ? BlendMode.darken : null,
                       ),
                     );
@@ -164,15 +173,16 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                   animation: _controller,
                   builder: (context, _) {
                     // Use dark blue gradient colors for dark mode
-                    final List<Color> colors = isDarkMode
-                        ? _darkModeGradientColors
-                        : bg.colors
-                            .map(_parseColor)
-                            .whereType<Color>()
-                            .toList();
-                    
+                    final List<Color> colors =
+                        isDarkMode
+                            ? _darkModeGradientColors
+                            : bg.colors
+                                .map(_parseColor)
+                                .whereType<Color>()
+                                .toList();
+
                     if (colors.length < 2) return const SizedBox.shrink();
-                    
+
                     return Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
@@ -201,12 +211,10 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                 Container(
                   color: Colors.black.withValues(alpha: 1.0 - overlayOpacity),
                 ),
-                
+
               // Additional darkening overlay for dark mode images
               if (bg.hasImage && isDarkMode)
-                Container(
-                  color: Colors.black.withValues(alpha: 0.4),
-                ),
+                Container(color: Colors.black.withValues(alpha: 0.4)),
             ],
           ),
         );

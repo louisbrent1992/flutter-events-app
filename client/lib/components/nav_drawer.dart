@@ -213,7 +213,7 @@ class NavDrawer extends StatelessWidget {
                     const SizedBox(height: 16),
                     Center(
                       child: Text(
-                        'EventEase • v1.0.9',
+                        'EventEase • v1.0.0',
                         style: TextStyle(
                           color: (isDark ? Colors.white : cs.onSurface).withValues(
                             alpha: 0.7,

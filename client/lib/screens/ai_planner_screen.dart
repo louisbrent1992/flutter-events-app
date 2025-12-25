@@ -115,6 +115,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
         } catch (_) {}
 
         // Deduct credits (best-effort)
+        if (!mounted) return;
         try {
           await context.read<SubscriptionProvider>().useCredits(
             CreditType.aiPlan,

@@ -12,15 +12,18 @@ class RandomEventService {
     String? region,
   }) async {
     final queryParams = <String, String>{};
-    if (query != null && query.trim().isNotEmpty)
+    if (query != null && query.trim().isNotEmpty) {
       queryParams['q'] = query.trim();
+    }
     if (category != null && category.trim().isNotEmpty && category != 'All') {
       queryParams['category'] = category.trim();
     }
-    if (city != null && city.trim().isNotEmpty)
+    if (city != null && city.trim().isNotEmpty) {
       queryParams['city'] = city.trim();
-    if (region != null && region.trim().isNotEmpty)
+    }
+    if (region != null && region.trim().isNotEmpty) {
       queryParams['region'] = region.trim();
+    }
 
     final resp = await _api.publicGet<Map<String, dynamic>>(
       'random',

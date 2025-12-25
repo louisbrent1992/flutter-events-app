@@ -19,11 +19,18 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fade;
   late final Animation<double> _scale;
   DateTime? _startTime;
+  late final ImageProvider _logo;
 
   @override
   void initState() {
     super.initState();
     _startTime = DateTime.now();
+    _logo = const AssetImage('assets/icons/FullLogo_Transparent.png');
+    // Preload the logo so the splash animation doesn't "pop" on first paint.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      precacheImage(_logo, context);
+    });
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -119,7 +126,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Center(
@@ -127,22 +133,11 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fade,
           child: ScaleTransition(
             scale: _scale,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.event_available_rounded,
-                  size: 72,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'EventEase',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
+            child: Image(
+              image: _logo,
+              width: 280,
+              filterQuality: FilterQuality.high,
+              fit: BoxFit.contain,
             ),
           ),
         ),

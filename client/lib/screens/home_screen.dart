@@ -23,11 +23,11 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 12),
-              Text(
-                'EventEase',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w900,
-                ),
+              Image.asset(
+                'assets/icons/eventease_header.png',
+                height: 60,
+                filterQuality: FilterQuality.high,
+                fit: BoxFit.contain,
               ),
               SizedBox(height: AppSpacing.sm),
               Text(

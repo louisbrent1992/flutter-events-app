@@ -69,7 +69,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       title:
           useLogo
               ? Image.asset(
-                'assets/icons/logo.png',
+                'assets/icons/app_logo_256.png',
                 height:
                     logoHeight ??
                     AppSizing.responsiveIconSize(

@@ -39,7 +39,7 @@ android {
         applicationId = "com.eventease.com"
         minSdk = 24
         targetSdk = 35
-        versionCode = 81
+        versionCode = 1
         versionName = flutter.versionName
     }
 

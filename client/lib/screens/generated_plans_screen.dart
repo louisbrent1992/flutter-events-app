@@ -74,8 +74,9 @@ class _GeneratedPlansScreenState extends State<GeneratedPlansScreen> {
                 itemCount: provider.plans.length + 1,
                 itemBuilder: (context, idx) {
                   if (idx == provider.plans.length) {
-                    if (provider.totalPages <= 1)
+                    if (provider.totalPages <= 1) {
                       return const SizedBox.shrink();
+                    }
                     return Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Row(

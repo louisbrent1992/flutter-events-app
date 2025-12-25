@@ -29,7 +29,7 @@ class _MainScreenState extends State<MainScreen> {
     _currentIndex = widget.initialIndex ?? 2; // Default to My Events
     // Create screens once in initState to prevent recreation
     _screens = [
-      const PersistentBannerLayout(child: HomeScreen(redirectIfAuthed: false)),
+      const PersistentBannerLayout(child: HomeScreen()),
       const PersistentBannerLayout(child: _DiscoverPlaceholderScreen()),
       const PersistentBannerLayout(child: MyEventsScreen()),
       const PersistentBannerLayout(child: AiPlannerScreen()),

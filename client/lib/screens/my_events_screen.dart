@@ -77,7 +77,7 @@ class _MyEventsScreenState extends State<MyEventsScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: CustomAppBar(
-        title: 'My Events',
+        title: 'Events',
         fullTitle: 'My Events',
         actions: [
           PopupMenuButton<String>(

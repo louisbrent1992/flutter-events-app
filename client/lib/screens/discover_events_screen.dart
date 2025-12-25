@@ -269,7 +269,8 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
+                          key: ValueKey('category_$_selectedCategory'),
+                          initialValue: _selectedCategory,
                           items:
                               _categories
                                   .map(
@@ -292,7 +293,8 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen> {
                       SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedTimeWindow,
+                          key: ValueKey('when_$_selectedTimeWindow'),
+                          initialValue: _selectedTimeWindow,
                           items:
                               _timeWindows
                                   .map(
