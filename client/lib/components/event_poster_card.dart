@@ -94,7 +94,7 @@ class _EventPosterCardState extends State<EventPosterCard>
             : scheme.primary);
 
     final radius = BorderRadius.circular(AppRadii.xl);
-    final height = widget.compact ? 100.0 : 180.0;
+    final height = widget.compact ? 100.0 : 220.0;
 
     Widget imageLayer;
     if (hasImage) {

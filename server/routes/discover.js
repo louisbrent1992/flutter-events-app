@@ -86,6 +86,8 @@ router.get("/discover", async (req, res) => {
     const sgEvents = await fetchSeatgeekEvents({
       keyword: q,
       city: city
+
+
     });
 
     // 3. Filter Internal Events

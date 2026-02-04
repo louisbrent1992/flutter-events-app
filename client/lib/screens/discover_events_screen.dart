@@ -433,7 +433,7 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
       itemCount: 4,
       separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (context, i) {
-        final height = i % 2 == 0 ? 180.0 : 100.0;
+        final height = i % 2 == 0 ? 220.0 : 100.0;
         return Container(
           height: height,
           decoration: BoxDecoration(

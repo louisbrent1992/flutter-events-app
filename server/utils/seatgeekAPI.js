@@ -25,8 +25,12 @@ async function fetchSeatgeekEvents({ keyword, city }) {
             per_page: 20
         };
 
-        // Filter out undefined params
-        Object.keys(params).forEach(key => params[key] === undefined && delete params[key]);
+        // Filter out undefined or empty params
+        Object.keys(params).forEach(key => {
+            if (params[key] === undefined || params[key] === null || params[key] === "") {
+                delete params[key];
+            }
+        });
 
         const response = await axios.get(BASE_URL, { params });
 
@@ -47,14 +51,41 @@ function mapSeatgeekEvent(sgEvent) {
     // Find the highest resolution performer image
     let imageUrl = null;
     if (sgEvent.performers && sgEvent.performers.length > 0) {
-        imageUrl = sgEvent.performers[0].image;
+        const p = sgEvent.performers[0];
+        imageUrl = (p.images && p.images.huge) || p.image;
+    }
+
+    // Generate a rich description if none exists
+    let description = sgEvent.description || "";
+    const performers = sgEvent.performers || [];
+    const performerNames = performers.map(p => p.name).join(", ");
+
+    if (!description || description.trim().length === 0) {
+        const parts = [];
+        if (performers.length > 0) {
+            parts.push(`Don't miss ${performerNames} live at ${venue.name || "the venue"}!`);
+        } else {
+            parts.push(`Example synthesized description for ${sgEvent.title}.`);
+        }
+
+        if (venue.city) {
+            parts.push(`Happening in ${venue.city}.`);
+        }
+
+        if (sgEvent.stats && sgEvent.stats.lowest_price) {
+            parts.push(`Tickets currently start at $${sgEvent.stats.lowest_price}.`);
+        } else {
+            parts.push("Check ticket availability for latest prices.");
+        }
+
+        description = parts.join(" ");
     }
 
     return {
         id: `sg-${sgEvent.id}`,
         source: "seatgeek",
         title: sgEvent.short_title || sgEvent.title,
-        description: sgEvent.type ? `Type: ${sgEvent.type}` : "", // SeatGeek doesn't provide rich descriptions in list
+        description: description,
         startAt: sgEvent.datetime_utc, // ISO string
         endAt: null, // Often not provided
         venueName: venue.name || "Unknown Venue",
@@ -64,11 +95,17 @@ function mapSeatgeekEvent(sgEvent) {
         categories: [sgEvent.type].filter(Boolean),
         imageUrl: imageUrl,
         externalUrl: sgEvent.url,
+        ticketPrice: sgEvent.stats && sgEvent.stats.lowest_price ? `$${sgEvent.stats.lowest_price}` : null,
         price: {
             min: sgEvent.stats ? sgEvent.stats.lowest_price : null,
             max: sgEvent.stats ? sgEvent.stats.highest_price : null,
-            currency: "USD" // Usually USD for SeatGeek default
-        }
+            currency: "USD"
+        },
+        performers: performers.map(p => ({
+            name: p.name,
+            image: p.image,
+            type: p.type
+        }))
     };
 }
 

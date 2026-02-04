@@ -5,6 +5,8 @@ import 'package:eventease/providers/event_provider.dart';
 import 'package:eventease/services/notification_scheduler.dart';
 import 'package:eventease/theme/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eventease/components/glass_surface.dart';
 import 'package:eventease/components/html_description.dart';
@@ -207,161 +209,213 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
     // Calculate app bar opacity based on scroll
     final appBarOpacity = (_scrollOffset / (heroHeight - 100)).clamp(0.0, 1.0);
+    final isScrolled = appBarOpacity > 0.6;
 
-    return Scaffold(
-      backgroundColor: isDark ? AppPalette.darkBg : AppPalette.lightBg,
-      extendBodyBehindAppBar: true,
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: Stack(
-          children: [
-            // Main content
-            CustomScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // Hero Image
-                SliverToBoxAdapter(
-                  child: _buildHeroImage(
-                    context,
-                    heroHeight: heroHeight,
-                    hasImage: hasImage,
-                    accentColor: accentColor,
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness:
+            isScrolled
+                ? (isDark ? Brightness.light : Brightness.dark)
+                : Brightness.light,
+        statusBarBrightness:
+            isScrolled
+                ? (isDark ? Brightness.dark : Brightness.light)
+                : Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: scaffoldBg,
+        extendBodyBehindAppBar: true,
+        body: FadeTransition(
+          opacity: _fadeAnim,
+          child: Stack(
+            children: [
+              // Main content
+              CustomScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Hero Image (using SliverAppBar for proper parallax/stretch)
+                  SliverAppBar(
+                    expandedHeight: heroHeight,
+                    pinned: false,
+                    floating: false,
+                    stretch: true,
+                    backgroundColor: Colors.transparent,
+                    automaticallyImplyLeading: false,
+                    flexibleSpace: FlexibleSpaceBar(
+                      collapseMode: CollapseMode.parallax,
+                      stretchModes: const [
+                        StretchMode.zoomBackground,
+                        StretchMode.blurBackground,
+                      ],
+                      background: _buildHeroBackground(
+                        context,
+                        hasImage: hasImage,
+                        accentColor: accentColor,
+                        scaffoldBg: scaffoldBg,
+                      ),
+                    ),
                   ),
-                ),
-                // Content
-                SliverToBoxAdapter(child: _buildContent(context, accentColor)),
-                // Bottom padding
-                SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
-            ),
+                  // Content
+                  SliverToBoxAdapter(
+                    child: _buildContent(context, accentColor),
+                  ),
+                  // Bottom padding
+                  SliverToBoxAdapter(child: SizedBox(height: 120)),
+                ],
+              ),
 
-            // Custom App Bar
-            _buildAppBar(context, appBarOpacity, accentColor),
+              // Custom App Bar
+              _buildAppBar(context, appBarOpacity, accentColor),
 
-            // Floating Action Buttons
-            _buildFloatingActions(context, accentColor),
-          ],
+              // Floating Action Buttons
+              _buildFloatingActions(context, accentColor),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeroImage(
+  Widget _buildHeroBackground(
     BuildContext context, {
-    required double heroHeight,
     required bool hasImage,
     required Color accentColor,
+    required Color scaffoldBg,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
-    // Parallax effect
-    final parallaxOffset = _scrollOffset * 0.4;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // Image
+        hasImage
+            ? CachedNetworkImage(
+              imageUrl: widget.event.imageUrl!.trim(),
+              fit: BoxFit.cover,
+              placeholder: (_, __) => _buildImagePlaceholder(accentColor),
+              errorWidget: (_, __, ___) => _buildImagePlaceholder(accentColor),
+            )
+            : _buildImagePlaceholder(accentColor),
 
-    return SizedBox(
-      height: heroHeight,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Image with parallax
-          Transform.translate(
-            offset: Offset(0, parallaxOffset),
-            child:
-                hasImage
-                    ? CachedNetworkImage(
-                      imageUrl: widget.event.imageUrl!.trim(),
-                      fit: BoxFit.cover,
-                      placeholder:
-                          (_, __) => _buildImagePlaceholder(accentColor),
-                      errorWidget:
-                          (_, __, ___) => _buildImagePlaceholder(accentColor),
-                    )
-                    : _buildImagePlaceholder(accentColor),
-          ),
-
-          // Gradient overlays
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.3),
-                  Colors.transparent,
-                  Colors.transparent,
-                  (isDark ? AppPalette.darkBg : AppPalette.lightBg).withValues(
-                    alpha: 0.8,
-                  ),
-                  isDark ? AppPalette.darkBg : AppPalette.lightBg,
-                ],
-                stops: const [0.0, 0.2, 0.5, 0.85, 1.0],
-              ),
+        // Deep gradient for text legibility
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.4),
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.2),
+                Colors.black.withValues(alpha: 0.8),
+                Colors.black,
+              ],
+              stops: const [0.0, 0.3, 0.5, 0.8, 1.0],
             ),
           ),
+        ),
 
-          // Accent color glow at bottom
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [
-                    accentColor.withValues(alpha: 0.15),
-                    Colors.transparent,
+        // Content Overlay
+        Positioned(
+          bottom: 24,
+          left: 20,
+          right: 20,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Category Pill
+              if (widget.event.categories.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: accentColor.withValues(alpha: 0.4),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    widget.event.categories.first.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+
+              // Title
+              Text(
+                widget.event.title,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                  shadows: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ),
+              const SizedBox(height: 12),
 
-          // Category badges on image
-          if (widget.event.categories.isNotEmpty)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 60,
-              left: 20,
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    widget.event.categories.take(3).map((cat) {
-                      final color = _getCategoryColor(cat);
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
+              // Date Row
+              if (widget.event.startAt != null)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.calendar_today_rounded,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _formatDate(widget.event.startAt!).toUpperCase(),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    if (widget.event.startAt != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '•',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [color, color.withValues(alpha: 0.8)],
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadii.full),
-                          boxShadow: [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(widget.event.startAt!),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w600,
                         ),
-                        child: Text(
-                          cat,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ),
-        ],
-      ),
+                      ),
+                    ],
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -406,8 +460,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
           bottom: 12,
         ),
         decoration: BoxDecoration(
-          color: (isDark ? AppPalette.darkBg : AppPalette.lightBg).withValues(
-            alpha: opacity * 0.95,
+          color: (isDark ? AppPalette.darkBg : scheme.surface).withValues(
+            alpha: opacity * 0.98,
           ),
           border:
               opacity > 0.5
@@ -427,7 +481,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               padding: EdgeInsets.zero,
               tintColor:
                   opacity < 0.5
-                      ? Colors.black.withValues(alpha: 0.3)
+                      ? Colors.black.withValues(alpha: 0.2)
                       : Colors.transparent,
               borderColor: Colors.transparent,
               child: IconButton(
@@ -468,7 +522,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               padding: EdgeInsets.zero,
               tintColor:
                   opacity < 0.5
-                      ? Colors.black.withValues(alpha: 0.3)
+                      ? Colors.black.withValues(alpha: 0.2)
                       : Colors.transparent,
               borderColor: Colors.transparent,
               child: IconButton(
@@ -488,104 +542,118 @@ class _EventDetailScreenState extends State<EventDetailScreen>
   Widget _buildContent(BuildContext context, Color accentColor) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    // Removed scaffoldBg logic as it's not needed for simple content
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: AppSpacing.responsive(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date badge
-          if (widget.event.startAt != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppRadii.md),
-                border: Border.all(color: accentColor.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_today_rounded,
-                    size: 18,
-                    color: accentColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatDate(widget.event.startAt!),
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: accentColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 24),
 
-          // Title
-          Text(
-            widget.event.title,
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              height: 1.1,
+          // Venue & Time Info Cards (Full Width)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'VENUE',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.event.venueName ?? 'TBA',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        widget.event.city ?? '',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: scheme.outline.withValues(alpha: 0.1),
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TIME',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.event.startAt != null
+                            ? _formatTime(widget.event.startAt!)
+                            : 'TBA',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        widget.event.startAt != null
+                            ? _formatDate(widget.event.startAt!)
+                            : '',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-
-          // Quick info cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildInfoCard(
-                  context,
-                  icon: Icons.location_on_rounded,
-                  label: 'Venue',
-                  value: widget.event.venueName ?? widget.event.city ?? 'TBA',
-                  color: AppPalette.accentBlue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildInfoCard(
-                  context,
-                  icon: Icons.access_time_rounded,
-                  label: 'Time',
-                  value:
-                      widget.event.startAt != null
-                          ? _formatTime(widget.event.startAt!)
-                          : 'TBA',
-                  color: AppPalette.emerald,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
 
           // About section
           Text(
             'About',
             style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 12),
-          GlassSurface(
-            blurSigma: 16,
-            borderRadius: BorderRadius.circular(AppRadii.xl),
-            child:
-                widget.event.description.contains('<')
-                    ? HtmlDescription(htmlContent: widget.event.description)
-                    : Text(
-                      widget.event.description.isEmpty
-                          ? 'No description available.'
-                          : widget.event.description,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.85),
-                        height: 1.6,
-                      ),
-                    ),
+          Text(
+            widget.event.description.isEmpty
+                ? 'No description available for this event.'
+                : widget.event.description,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.8),
+              height: 1.6,
+            ),
           ),
           const SizedBox(height: 28),
 
@@ -599,27 +667,31 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               ),
             ),
             const SizedBox(height: 12),
-            GlassSurface(
-              blurSigma: 16,
-              borderRadius: BorderRadius.circular(AppRadii.xl),
-              enableGlow: true,
-              glowColor: AppPalette.accentBlue,
-              glowIntensity: 0.1,
+            Container(
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: 0.1),
+                ),
+              ),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppPalette.accentBlue.withValues(alpha: 0.15),
+                          color: AppPalette.accentBlue.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(AppRadii.md),
                         ),
                         child: Icon(
                           Icons.location_on_rounded,
                           color: AppPalette.accentBlue,
-                          size: 24,
+                          size: 20,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -635,11 +707,14 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                                 ),
                               ),
                             if ((widget.event.address ?? '').isNotEmpty)
-                              Text(
-                                widget.event.address!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: scheme.onSurface.withValues(
-                                    alpha: 0.7,
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  widget.event.address!,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onSurface.withValues(
+                                      alpha: 0.7,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -670,14 +745,20 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                           'https://www.google.com/maps/search/?api=1&query=$query',
                         );
                       },
-                      icon: const Icon(Icons.directions_rounded),
+                      icon: const Icon(Icons.directions_rounded, size: 18),
                       label: const Text('Get directions'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: scheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
           ],
 
           // Tickets section
@@ -689,9 +770,14 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               ),
             ),
             const SizedBox(height: 12),
-            GradientGlassSurface(
-              borderRadius: BorderRadius.circular(AppRadii.xl),
-              borderGradient: AppPalette.heroGradient,
+            Container(
+              decoration: BoxDecoration(
+                gradient: AppPalette.heroGradient.scale(0.05),
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+                border: Border.all(
+                  color: AppPalette.accentBlue.withValues(alpha: 0.2),
+                ),
+              ),
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,16 +785,19 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                   Row(
                     children: [
                       Icon(
-                        Icons.confirmation_num_rounded,
-                        color: scheme.primary,
-                        size: 28,
+                        Icons.confirmation_num_outlined,
+                        color: AppPalette.accentBlue,
+                        size: 24,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Get your tickets',
+                          widget.event.ticketPrice != null
+                              ? 'Tickets from ${widget.event.ticketPrice}'
+                              : 'Tickets available',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
+                            color: AppPalette.accentBlue,
                           ),
                         ),
                       ),
@@ -726,55 +815,6 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    final theme = Theme.of(context);
-
-    return GlassSurface(
-      blurSigma: 16,
-      borderRadius: BorderRadius.circular(AppRadii.lg),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadii.sm),
-                ),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
         ],
       ),
     );
