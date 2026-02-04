@@ -156,11 +156,7 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
       appBar: CustomAppBar(
         title: '',
         centerTitle: false,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
+        automaticallyImplyLeading: true,
         actions: [
           // View toggle would go here
           IconButton(

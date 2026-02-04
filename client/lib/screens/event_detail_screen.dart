@@ -166,32 +166,10 @@ class _EventDetailScreenState extends State<EventDetailScreen>
   }
 
   String _formatDate(DateTime dt) {
-    final weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    return '${weekdays[dt.weekday - 1]}, ${months[dt.month - 1]} ${dt.day} at $hour:${dt.minute.toString().padLeft(2, '0')} $ampm';
+    final local = dt.toLocal();
+    return DateFormat('EEEE, MMMM d').format(local) +
+        ' AT ' +
+        DateFormat('h:mm a').format(local);
   }
 
   @override
@@ -916,9 +894,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
   }
 
   String _formatTime(DateTime dt) {
-    final hour = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:${dt.minute.toString().padLeft(2, '0')} $ampm';
+    return DateFormat('h:mm a').format(dt.toLocal());
   }
 
   Widget _buildReminderSheet(BuildContext context) {

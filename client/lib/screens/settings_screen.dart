@@ -180,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen>
       appBar: CustomAppBar(
         title: '',
         centerTitle: false,
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
       ),
       body: FadeTransition(
         opacity: _fadeAnim,
@@ -363,6 +363,22 @@ class _SettingsScreenState extends State<SettingsScreen>
                   title: 'Report a bug',
                   subtitle: 'Help us improve',
                   onTap: () => _contactSupport(context, subject: 'Bug Report'),
+                ),
+                _SettingsItem(
+                  icon: Icons.star_outline_rounded,
+                  iconColor: AppPalette.accentPurple,
+                  title: 'Review app',
+                  subtitle:
+                      Platform.isIOS
+                          ? 'Rate us on the App Store'
+                          : 'Rate us on Google Play',
+                  onTap: () {
+                    // Placeholder for store review integration
+                    SnackBarHelper.showInfo(
+                      context,
+                      'Store review coming soon!',
+                    );
+                  },
                 ),
                 _SettingsItem(
                   icon: Icons.privacy_tip_outlined,

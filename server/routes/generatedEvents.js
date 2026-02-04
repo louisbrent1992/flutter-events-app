@@ -418,12 +418,6 @@ router.post("/plan", async (req, res) => {
 
 		let raw = completion.choices?.[0]?.message?.content || "{}";
 
-		// No cleaning needed with structured output
-		// raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
-
-		if (process.env.NODE_ENV !== 'production') {
-			console.log("DEBUG: AI Plan Raw Response:", raw);
-		}
 		return res.json(JSON.parse(raw));
 	} catch (e) {
 		console.error("Planner error:", e);

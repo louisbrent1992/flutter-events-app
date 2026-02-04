@@ -14,6 +14,7 @@ class AppPalette {
   static const Color emerald = Color(0xFF059669); // Success green
   static const Color amber = Color(0xFFD97706); // Warm accent
   static const Color warmGray = Color(0xFF78716C); // Neutral warm
+  static const Color accentPurple = Color(0xFF8B5CF6); // Purple accent
 
   // Dark Mode - Refined, Professional
   static const Color darkBg = Color(0xFF0F172A); // Slate-900

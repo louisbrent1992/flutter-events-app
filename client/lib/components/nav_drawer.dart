@@ -180,7 +180,11 @@ class NavDrawer extends StatelessWidget {
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
     if (currentRoute != route) {
       HapticFeedback.selectionClick();
-      Navigator.pushReplacementNamed(context, route);
+      if (route == '/home') {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      } else {
+        Navigator.pushNamed(context, route);
+      }
     }
   }
 

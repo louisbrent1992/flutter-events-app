@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:eventease/components/custom_app_bar.dart';
 import 'package:eventease/providers/event_provider.dart';
@@ -141,10 +142,16 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
     if (v is DateTime) return v;
     final s = v.toString();
     try {
-      return DateTime.parse(s);
+      return DateTime.parse(s).toLocal();
     } catch (_) {
       return null;
     }
+  }
+
+  String? _formatRecapDate(dynamic v) {
+    final dt = _parseDt(v);
+    if (dt == null) return null;
+    return DateFormat('h:mm a').format(dt);
   }
 
   Future<void> _saveAsEvents() async {
@@ -264,20 +271,25 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
       ),
       body: SafeArea(
         bottom: false,
-          child: ListView(
+        child: ListView(
           padding: EdgeInsets.only(
             left: AppSpacing.responsive(context),
             right: AppSpacing.responsive(context),
-            top: AppSpacing.responsive(context, mobile: 10, tablet: 16, desktop: 18),
+            top: AppSpacing.responsive(
+              context,
+              mobile: 10,
+              tablet: 16,
+              desktop: 18,
+            ),
             bottom: 140,
           ),
-            children: [
-              Text(
-                'Tell us what you want and we’ll draft a schedule you can save.',
+          children: [
+            Text(
+              'Tell us what you want and we’ll draft a schedule you can save.',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-                ),
               ),
+            ),
             const SizedBox(height: 14),
 
             const SectionHeader(
@@ -290,13 +302,13 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-              TextField(
-                controller: _vibe,
-                decoration: const InputDecoration(
-                  labelText: 'Vibe',
-                  hintText: 'e.g. chill, energetic, artsy, classy…',
-                ),
-              ),
+                  TextField(
+                    controller: _vibe,
+                    decoration: const InputDecoration(
+                      labelText: 'Vibe',
+                      hintText: 'e.g. chill, energetic, artsy, classy…',
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   SizedBox(
                     height: 40,
@@ -311,7 +323,9 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                         const SizedBox(width: 10),
                         PillChip(
                           label: 'Energetic',
-                          selected: _vibe.text.toLowerCase().contains('energetic'),
+                          selected: _vibe.text.toLowerCase().contains(
+                            'energetic',
+                          ),
                           onTap: () => setState(() => _vibe.text = 'Energetic'),
                         ),
                         const SizedBox(width: 10),
@@ -324,60 +338,61 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                         PillChip(
                           label: 'Date night',
                           selected: _vibe.text.toLowerCase().contains('date'),
-                          onTap: () => setState(() => _vibe.text = 'Date night'),
+                          onTap:
+                              () => setState(() => _vibe.text = 'Date night'),
                         ),
                       ],
                     ),
                   ),
-              SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _budget,
-                decoration: const InputDecoration(
-                  labelText: 'Budget',
-                  hintText: 'e.g. under \$75, free, mid-range…',
-                ),
-              ),
-              SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _location,
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  hintText: 'e.g. Downtown Austin, East London…',
-                ),
-              ),
-              SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _dates,
-                decoration: const InputDecoration(
-                  labelText: 'Dates',
+                  SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _budget,
+                    decoration: const InputDecoration(
+                      labelText: 'Budget',
+                      hintText: 'e.g. under \$75, free, mid-range…',
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _location,
+                    decoration: const InputDecoration(
+                      labelText: 'Location',
+                      hintText: 'e.g. Downtown Austin, East London…',
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _dates,
+                    decoration: const InputDecoration(
+                      labelText: 'Dates',
                       hintText: 'e.g. Sat evening, or Dec 21–22',
-                ),
-              ),
-              SizedBox(height: AppSpacing.md),
-              TextField(
-                controller: _constraints,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: 'Constraints (optional)',
-                  hintText:
-                      'e.g. no alcohol, wheelchair accessible, near subway…',
-                ),
-              ),
-              SizedBox(height: AppSpacing.lg),
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.md),
+                  TextField(
+                    controller: _constraints,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Constraints (optional)',
+                      hintText:
+                          'e.g. no alcohol, wheelchair accessible, near subway…',
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.lg),
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                onPressed: _generatePlan,
-                icon: const Icon(Icons.auto_awesome_rounded),
-                label: const Text('Generate itinerary'),
-              ),
+                      onPressed: _generatePlan,
+                      icon: const Icon(Icons.auto_awesome_rounded),
+                      label: const Text('Generate itinerary'),
+                    ),
                   ),
                 ],
               ),
             ),
 
-              if (_plan != null) ...[
-                SizedBox(height: AppSpacing.xl),
+            if (_plan != null) ...[
+              SizedBox(height: AppSpacing.xl),
               const SectionHeader(
                 title: 'Result',
                 subtitle: 'Review the itinerary, then save it as events.',
@@ -388,31 +403,36 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                Text(
-                  (_plan!['title'] ?? 'Your plan').toString(),
+                    Text(
+                      (_plan!['title'] ?? 'Your plan').toString(),
                       style: theme.textTheme.headlineMedium,
-                  ),
+                    ),
                     const SizedBox(height: 8),
-                if (_itinerary.isEmpty)
+                    if (_itinerary.isEmpty)
                       Text(
-                    'No itinerary items returned. Try again with more details.',
+                        'No itinerary items returned. Try again with more details.',
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
-                  ),
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.78,
+                          ),
+                        ),
                       )
                     else
                       Column(
                         children: [
-                for (final raw in _itinerary)
-                  if (raw is Map)
+                          for (final raw in _itinerary)
+                            if (raw is Map)
                               Padding(
                                 padding: EdgeInsets.only(bottom: AppSpacing.sm),
                                 child: GlassSurface(
                                   blurSigma: 12,
-                                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadii.lg,
+                                  ),
                                   tintColor: theme.colorScheme.surface,
                                   child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Icon(
                                         Icons.circle,
@@ -422,55 +442,81 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              (raw['title'] ?? 'Event').toString(),
-                                              style: theme.textTheme.titleMedium,
+                                              (raw['title'] ?? 'Event')
+                                                  .toString(),
+                                              style:
+                                                  theme.textTheme.titleMedium,
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                          [
-                                raw['startAt']?.toString(),
-                                raw['venueName']?.toString(),
-                              ]
-                              .where(
-                                (s) =>
+                                              [
+                                                    _formatRecapDate(
+                                                          raw['startAt'],
+                                                        ) ??
+                                                        raw['startAt']
+                                                            ?.toString(),
+                                                    raw['venueName']
+                                                        ?.toString(),
+                                                  ]
+                                                  .where(
+                                                    (s) =>
                                                         s != null &&
-                                                        s.toString().trim().isNotEmpty,
-                              )
-                              .join(' • '),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                                              style: theme.textTheme.bodySmall?.copyWith(
-                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
-                                              ),
+                                                        s
+                                                            .toString()
+                                                            .trim()
+                                                            .isNotEmpty,
+                                                  )
+                                                  .join(' • '),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurface
+                                                        .withValues(
+                                                          alpha: 0.75,
+                                                        ),
+                                                  ),
                                             ),
-                                            if ((raw['notes'] ?? '').toString().trim().isNotEmpty) ...[
+                                            if ((raw['notes'] ?? '')
+                                                .toString()
+                                                .trim()
+                                                .isNotEmpty) ...[
                                               const SizedBox(height: 8),
                                               Text(
                                                 (raw['notes'] ?? '').toString(),
-                                                style: theme.textTheme.bodySmall?.copyWith(
-                                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
-                                                ),
+                                                style: theme.textTheme.bodySmall
+                                                    ?.copyWith(
+                                                      color: theme
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                            alpha: 0.80,
+                                                          ),
+                                                    ),
                                               ),
                                             ],
                                           ],
                                         ),
                                       ),
                                     ],
-                        ),
-                      ),
-                    ),
+                                  ),
+                                ),
+                              ),
                         ],
                       ),
                     const SizedBox(height: 6),
-                OutlinedButton.icon(
-                  onPressed: _saveAsEvents,
-                  icon: const Icon(Icons.save_alt_rounded),
-                  label: const Text('Save itinerary as events'),
-                ),
-              ],
+                    OutlinedButton.icon(
+                      onPressed: _saveAsEvents,
+                      icon: const Icon(Icons.save_alt_rounded),
+                      label: const Text('Save itinerary as events'),
+                    ),
+                  ],
                 ),
               ),
             ],
