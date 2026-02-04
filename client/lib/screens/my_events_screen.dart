@@ -7,6 +7,7 @@ import 'package:eventease/theme/theme.dart';
 import 'package:eventease/components/event_context_menu.dart';
 import 'package:eventease/components/event_poster_card.dart';
 import 'package:eventease/components/glass_surface.dart';
+import 'package:eventease/components/floating_bottom_bar.dart';
 import '../models/event.dart';
 import '../utils/snackbar_helper.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -235,128 +236,145 @@ class _MyEventsScreenState extends State<MyEventsScreen>
           ),
         ],
       ),
-      body: SafeArea(
-        bottom: false,
-        child: FadeTransition(
-          opacity: _fadeAnim,
-          child: Consumer<EventProvider>(
-            builder: (context, events, _) {
-              if (events.isLoading && events.userEvents.isEmpty) {
-                return const Center(child: CircularProgressIndicator());
-              }
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SafeArea(
+              bottom: false,
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: Consumer<EventProvider>(
+                  builder: (context, events, _) {
+                    if (events.isLoading && events.userEvents.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-              if (events.error != null && events.userEvents.isEmpty) {
-                return Center(child: Text(events.error!.userFriendlyMessage));
-              }
+                    if (events.error != null && events.userEvents.isEmpty) {
+                      return Center(
+                        child: Text(events.error!.userFriendlyMessage),
+                      );
+                    }
 
-              if (events.userEvents.isEmpty) {
-                return _buildEmptyState(context);
-              }
+                    if (events.userEvents.isEmpty) {
+                      return _buildEmptyState(context);
+                    }
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await context.read<EventProvider>().loadUserEvents(
-                    forceRefresh: true,
-                  );
-                  if (!context.mounted) return;
-                  SnackBarHelper.showSuccess(context, 'Events refreshed');
-                },
-                child: ListView(
-                  padding: EdgeInsets.only(top: AppSpacing.sm, bottom: 140),
-                  children: [
-                    // Header
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.responsive(context),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        await context.read<EventProvider>().loadUserEvents(
+                          forceRefresh: true,
+                        );
+                        if (!context.mounted) return;
+                        SnackBarHelper.showSuccess(context, 'Events refreshed');
+                      },
+                      child: ListView(
+                        padding: EdgeInsets.only(
+                          top: AppSpacing.sm,
+                          bottom: 140,
+                        ),
                         children: [
-                          Text(
-                            'My Calendar',
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              fontWeight: FontWeight.w800,
+                          // Header
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'My Calendar',
+                                  style: theme.textTheme.displaySmall?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                Text(
+                                  '${events.userEvents.length} saved events',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: scheme.onSurface.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            '${events.userEvents.length} saved events',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSurface.withValues(alpha: 0.6),
+                          const SizedBox(height: 20),
+
+                          // Tab switcher
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
+                            ),
+                            child: _buildTabSwitcher(context),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Category chips
+                          _buildCategoryChips(context, events.userEvents),
+                          const SizedBox(height: 20),
+
+                          // Calendar
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
+                            ),
+                            child: _buildCalendar(context, events.userEvents),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // Events for selected day
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Events',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: scheme.primary.withValues(
+                                      alpha: 0.15,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadii.full,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _formatSelectedDate(),
+                                    style: theme.textTheme.labelMedium
+                                        ?.copyWith(
+                                          color: scheme.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                          const SizedBox(height: 12),
+
+                          // Event list
+                          ..._buildEventList(context, events.userEvents),
                         ],
                       ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Tab switcher
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.responsive(context),
-                      ),
-                      child: _buildTabSwitcher(context),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Category chips
-                    _buildCategoryChips(context, events.userEvents),
-                    const SizedBox(height: 20),
-
-                    // Calendar
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.responsive(context),
-                      ),
-                      child: _buildCalendar(context, events.userEvents),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Events for selected day
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.responsive(context),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Events',
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: scheme.primary.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.full,
-                              ),
-                            ),
-                            child: Text(
-                              _formatSelectedDate(),
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: scheme.primary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Event list
-                    ..._buildEventList(context, events.userEvents),
-                  ],
+                    );
+                  },
                 ),
-              );
-            },
-          ),
-        ),
+              ), // FadeTransition
+            ), // SafeArea
+          ), // Positioned.fill
+          const FloatingBottomBar(),
+        ],
       ),
     );
   }

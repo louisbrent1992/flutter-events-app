@@ -8,6 +8,7 @@ import 'package:eventease/models/event.dart';
 import 'package:eventease/theme/theme.dart';
 import 'package:eventease/components/glass_surface.dart';
 import 'package:eventease/components/event_poster_card.dart';
+import 'package:eventease/components/floating_bottom_bar.dart';
 
 /// Premium event discovery screen with advanced filtering.
 ///
@@ -169,231 +170,248 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
           ),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: Column(
-          children: [
-            // Search Header
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: AppSpacing.responsive(context),
-              ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: FadeTransition(
+              opacity: _fadeAnim,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
-                  Text(
-                    'Discover',
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
+                  // Search Header
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: AppSpacing.responsive(context),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          'Discover',
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          'Find your next experience',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // Search bar
+                        GlassSurface(
+                          blurSigma: 18,
+                          borderRadius: BorderRadius.circular(AppRadii.xl),
+                          padding: EdgeInsets.zero,
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                            style: theme.textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              hintText: 'Search events, artists, venues...',
+                              hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.45),
+                              ),
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: scheme.onSurface.withValues(alpha: 0.5),
+                              ),
+                              suffixIcon:
+                                  _searchController.text.isNotEmpty
+                                      ? IconButton(
+                                        icon: Icon(
+                                          Icons.close_rounded,
+                                          color: scheme.onSurface.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                        ),
+                                        onPressed: () {
+                                          _searchController.clear();
+                                          _onSearchChanged('');
+                                        },
+                                      )
+                                      : null,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                     ),
                   ),
-                  Text(
-                    'Find your next experience',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.6),
+
+                  // Category chips
+                  SizedBox(
+                    height: 44,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.responsive(context),
+                      ),
+                      itemCount: _categoryData.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, i) {
+                        final cat = _categoryData[i];
+                        final isSelected = _selectedCategory == cat['name'];
+                        final catColor = cat['color'] as Color?;
+
+                        return GestureDetector(
+                          onTap: () => _selectCategory(cat['name']),
+                          child: AnimatedContainer(
+                            duration: AppAnimations.fast,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient:
+                                  isSelected && catColor != null
+                                      ? LinearGradient(
+                                        colors: [
+                                          catColor,
+                                          catColor.withValues(alpha: 0.8),
+                                        ],
+                                      )
+                                      : null,
+                              color:
+                                  isSelected && catColor == null
+                                      ? scheme.primary
+                                      : (isDark
+                                          ? AppPalette.darkSurfaceElevated
+                                          : AppPalette.lightSurfaceMuted),
+                              borderRadius: BorderRadius.circular(
+                                AppRadii.full,
+                              ),
+                              border: Border.all(
+                                color:
+                                    isSelected
+                                        ? Colors.transparent
+                                        : scheme.outline.withValues(alpha: 0.2),
+                              ),
+                              boxShadow:
+                                  isSelected && catColor != null
+                                      ? [
+                                        BoxShadow(
+                                          color: catColor.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ]
+                                      : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  cat['icon'] as IconData,
+                                  size: 16,
+                                  color:
+                                      isSelected
+                                          ? Colors.white
+                                          : (catColor ??
+                                              scheme.onSurface.withValues(
+                                                alpha: 0.7,
+                                              )),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  cat['name'],
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color:
+                                        isSelected
+                                            ? Colors.white
+                                            : scheme.onSurface.withValues(
+                                              alpha: 0.8,
+                                            ),
+                                    fontWeight:
+                                        isSelected
+                                            ? FontWeight.w700
+                                            : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // Search bar
-                  GlassSurface(
-                    blurSigma: 18,
-                    borderRadius: BorderRadius.circular(AppRadii.xl),
-                    padding: EdgeInsets.zero,
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      style: theme.textTheme.bodyLarge,
-                      decoration: InputDecoration(
-                        hintText: 'Search events, artists, venues...',
-                        hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                          color: scheme.onSurface.withValues(alpha: 0.45),
-                        ),
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: scheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                        suffixIcon:
-                            _searchController.text.isNotEmpty
-                                ? IconButton(
-                                  icon: Icon(
-                                    Icons.close_rounded,
-                                    color: scheme.onSurface.withValues(
-                                      alpha: 0.5,
+                  // Events grid
+                  Expanded(
+                    child: Consumer<DiscoverProvider>(
+                      builder: (context, provider, _) {
+                        if (provider.isLoading && provider.events.isEmpty) {
+                          return _buildLoadingState(context);
+                        }
+
+                        if (provider.error != null && provider.events.isEmpty) {
+                          return _buildErrorState(context, provider.error!);
+                        }
+
+                        if (provider.events.isEmpty) {
+                          return _buildEmptyState(context);
+                        }
+
+                        return RefreshIndicator(
+                          onRefresh: () async {
+                            await provider.load(
+                              page: 1,
+                              limit: 20,
+                              forceRefresh: true,
+                            );
+                          },
+                          color: scheme.primary,
+                          child: ListView.separated(
+                            controller: _scrollController,
+                            padding: EdgeInsets.only(
+                              left: AppSpacing.responsive(context),
+                              right: AppSpacing.responsive(context),
+                              bottom: 140,
+                            ),
+                            itemCount:
+                                provider.events.length +
+                                (provider.isLoading ? 1 : 0),
+                            separatorBuilder:
+                                (_, __) => const SizedBox(height: 14),
+                            itemBuilder: (context, i) {
+                              if (i >= provider.events.length) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
                                     ),
                                   ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _onSearchChanged('');
-                                  },
-                                )
-                                : null,
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        filled: false,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
+                                );
+                              }
+
+                              final event = provider.events[i];
+                              return _buildEventCard(context, event, index: i);
+                            },
+                          ),
+                        );
+                      },
                     ),
                   ),
-                  const SizedBox(height: 16),
                 ],
               ),
             ),
-
-            // Category chips
-            SizedBox(
-              height: 44,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: EdgeInsets.symmetric(
-                  horizontal: AppSpacing.responsive(context),
-                ),
-                itemCount: _categoryData.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, i) {
-                  final cat = _categoryData[i];
-                  final isSelected = _selectedCategory == cat['name'];
-                  final catColor = cat['color'] as Color?;
-
-                  return GestureDetector(
-                    onTap: () => _selectCategory(cat['name']),
-                    child: AnimatedContainer(
-                      duration: AppAnimations.fast,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient:
-                            isSelected && catColor != null
-                                ? LinearGradient(
-                                  colors: [
-                                    catColor,
-                                    catColor.withValues(alpha: 0.8),
-                                  ],
-                                )
-                                : null,
-                        color:
-                            isSelected && catColor == null
-                                ? scheme.primary
-                                : (isDark
-                                    ? AppPalette.darkSurfaceElevated
-                                    : AppPalette.lightSurfaceMuted),
-                        borderRadius: BorderRadius.circular(AppRadii.full),
-                        border: Border.all(
-                          color:
-                              isSelected
-                                  ? Colors.transparent
-                                  : scheme.outline.withValues(alpha: 0.2),
-                        ),
-                        boxShadow:
-                            isSelected && catColor != null
-                                ? [
-                                  BoxShadow(
-                                    color: catColor.withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ]
-                                : null,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            cat['icon'] as IconData,
-                            size: 16,
-                            color:
-                                isSelected
-                                    ? Colors.white
-                                    : (catColor ??
-                                        scheme.onSurface.withValues(
-                                          alpha: 0.7,
-                                        )),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            cat['name'],
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color:
-                                  isSelected
-                                      ? Colors.white
-                                      : scheme.onSurface.withValues(alpha: 0.8),
-                              fontWeight:
-                                  isSelected
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Events grid
-            Expanded(
-              child: Consumer<DiscoverProvider>(
-                builder: (context, provider, _) {
-                  if (provider.isLoading && provider.events.isEmpty) {
-                    return _buildLoadingState(context);
-                  }
-
-                  if (provider.error != null && provider.events.isEmpty) {
-                    return _buildErrorState(context, provider.error!);
-                  }
-
-                  if (provider.events.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
-
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      await provider.load(
-                        page: 1,
-                        limit: 20,
-                        forceRefresh: true,
-                      );
-                    },
-                    color: scheme.primary,
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      padding: EdgeInsets.only(
-                        left: AppSpacing.responsive(context),
-                        right: AppSpacing.responsive(context),
-                        bottom: 140,
-                      ),
-                      itemCount:
-                          provider.events.length + (provider.isLoading ? 1 : 0),
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (context, i) {
-                        if (i >= provider.events.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          );
-                        }
-
-                        final event = provider.events[i];
-                        return _buildEventCard(context, event, index: i);
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+          const FloatingBottomBar(),
+        ],
       ),
     );
   }

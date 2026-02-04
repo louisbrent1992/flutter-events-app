@@ -6,10 +6,9 @@ import 'package:eventease/services/notification_scheduler.dart';
 import 'package:eventease/theme/theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eventease/components/glass_surface.dart';
-import 'package:eventease/components/html_description.dart';
+import '../components/floating_bottom_bar.dart';
 import 'package:eventease/models/event.dart';
 import 'package:eventease/providers/auth_provider.dart';
 import '../utils/snackbar_helper.dart';
@@ -250,6 +249,9 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
               // Floating Action Buttons
               _buildFloatingActions(context, accentColor),
+
+              // Bottom Bar
+              const FloatingBottomBar(),
             ],
           ),
         ),

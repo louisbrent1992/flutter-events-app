@@ -13,7 +13,7 @@ import '../theme/theme.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/error_utils.dart';
 import '../components/inline_banner_ad.dart';
-// import '../components/floating_bottom_bar.dart';
+import '../components/floating_bottom_bar.dart';
 
 class SubscriptionScreen extends StatefulWidget {
   const SubscriptionScreen({super.key});
@@ -142,7 +142,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
           ),
 
           // Floating navigation bar
-          // sconst FloatingBottomBar(),
+          const FloatingBottomBar(),
         ],
       ),
     );

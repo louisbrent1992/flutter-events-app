@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'dart:io' show Platform;
 
 import '../components/custom_app_bar.dart';
+import '../components/floating_bottom_bar.dart';
 import '../components/glass_surface.dart';
 import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
@@ -182,241 +183,256 @@ class _SettingsScreenState extends State<SettingsScreen>
         centerTitle: false,
         automaticallyImplyLeading: true,
       ),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: ListView(
-          padding: EdgeInsets.only(
-            left: AppSpacing.responsive(context),
-            right: AppSpacing.responsive(context),
-            top: AppSpacing.sm,
-            bottom: 140,
-          ),
-          children: [
-            // Header
-            Text(
-              'Settings',
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Manage your account and preferences',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: scheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Profile Card
-            Consumer<UserProfileProvider>(
-              builder: (context, profile, _) {
-                final displayName =
-                    (profile.profile['displayName'] as String?) ??
-                    _user?.displayName ??
-                    (isAuthed ? 'Event Organizer' : 'Guest');
-                final email =
-                    (profile.profile['email'] as String?) ??
-                    _user?.email ??
-                    (isAuthed ? 'Signed in' : 'Browse mode');
-                if (!_editingName) _nameController.text = displayName;
-                final photoUrl = _photoUrl(profile.profile);
-
-                return _buildProfileCard(
-                  context,
-                  displayName: displayName,
-                  email: email,
-                  photoUrl: photoUrl,
-                  isAuthed: isAuthed,
-                  isPremium: subscription.isPremium,
-                  onEditProfile:
-                      isAuthed
-                          ? () async {
-                            try {
-                              await profile.uploadProfilePicture();
-                              if (!context.mounted) return;
-                              SnackBarHelper.showSuccess(
-                                context,
-                                'Photo updated',
-                              );
-                            } catch (_) {
-                              if (!context.mounted) return;
-                              SnackBarHelper.showError(
-                                context,
-                                'Could not update photo',
-                              );
-                            }
-                          }
-                          : null,
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-
-            // Name editing sheet
-            if (isAuthed && _editingName) _buildNameEditCard(context),
-            if (isAuthed && _editingName) const SizedBox(height: 20),
-
-            // Quick actions (for authed users)
-            if (isAuthed) ...[
-              _buildQuickActionsRow(context),
-              const SizedBox(height: 24),
-            ],
-
-            // Appearance Section
-            _buildSectionTitle(context, 'Appearance'),
-            const SizedBox(height: 12),
-            _buildThemeToggle(context, themeProvider),
-            const SizedBox(height: 24),
-
-            // Organizer Tools (for authed users)
-            if (isAuthed) ...[
-              _buildSectionTitle(context, 'Organizer Tools'),
-              const SizedBox(height: 12),
-              _buildSettingsCard(
-                context,
-                items: [
-                  _SettingsItem(
-                    icon: Icons.collections_bookmark_rounded,
-                    iconColor: AppPalette.accentBlue,
-                    title: 'Collections',
-                    subtitle: 'Organize events into lists',
-                    onTap: () => Navigator.pushNamed(context, '/collections'),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: FadeTransition(
+              opacity: _fadeAnim,
+              child: ListView(
+                padding: EdgeInsets.only(
+                  left: AppSpacing.responsive(context),
+                  right: AppSpacing.responsive(context),
+                  top: AppSpacing.sm,
+                  bottom: 140,
+                ),
+                children: [
+                  // Header
+                  Text(
+                    'Settings',
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
-                  _SettingsItem(
-                    icon: Icons.calendar_month_rounded,
-                    iconColor: AppPalette.emerald,
-                    title: 'My Events',
-                    subtitle: 'View your saved events',
-                    onTap: () => Navigator.pushNamed(context, '/myEvents'),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Manage your account and preferences',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Profile Card
+                  Consumer<UserProfileProvider>(
+                    builder: (context, profile, _) {
+                      final displayName =
+                          (profile.profile['displayName'] as String?) ??
+                          _user?.displayName ??
+                          (isAuthed ? 'Event Organizer' : 'Guest');
+                      final email =
+                          (profile.profile['email'] as String?) ??
+                          _user?.email ??
+                          (isAuthed ? 'Signed in' : 'Browse mode');
+                      if (!_editingName) _nameController.text = displayName;
+                      final photoUrl = _photoUrl(profile.profile);
+
+                      return _buildProfileCard(
+                        context,
+                        displayName: displayName,
+                        email: email,
+                        photoUrl: photoUrl,
+                        isAuthed: isAuthed,
+                        isPremium: subscription.isPremium,
+                        onEditProfile:
+                            isAuthed
+                                ? () async {
+                                  try {
+                                    await profile.uploadProfilePicture();
+                                    if (!context.mounted) return;
+                                    SnackBarHelper.showSuccess(
+                                      context,
+                                      'Photo updated',
+                                    );
+                                  } catch (_) {
+                                    if (!context.mounted) return;
+                                    SnackBarHelper.showError(
+                                      context,
+                                      'Could not update photo',
+                                    );
+                                  }
+                                }
+                                : null,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Name editing sheet
+                  if (isAuthed && _editingName) _buildNameEditCard(context),
+                  if (isAuthed && _editingName) const SizedBox(height: 20),
+
+                  // Quick actions (for authed users)
+                  if (isAuthed) ...[
+                    _buildQuickActionsRow(context),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Appearance Section
+                  _buildSectionTitle(context, 'Appearance'),
+                  const SizedBox(height: 12),
+                  _buildThemeToggle(context, themeProvider),
+                  const SizedBox(height: 24),
+
+                  // Organizer Tools (for authed users)
+                  if (isAuthed) ...[
+                    _buildSectionTitle(context, 'Organizer Tools'),
+                    const SizedBox(height: 12),
+                    _buildSettingsCard(
+                      context,
+                      items: [
+                        _SettingsItem(
+                          icon: Icons.collections_bookmark_rounded,
+                          iconColor: AppPalette.accentBlue,
+                          title: 'Collections',
+                          subtitle: 'Organize events into lists',
+                          onTap:
+                              () =>
+                                  Navigator.pushNamed(context, '/collections'),
+                        ),
+                        _SettingsItem(
+                          icon: Icons.calendar_month_rounded,
+                          iconColor: AppPalette.emerald,
+                          title: 'My Events',
+                          subtitle: 'View your saved events',
+                          onTap:
+                              () => Navigator.pushNamed(context, '/myEvents'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Notifications Section
+                  _buildSectionTitle(context, 'Notifications'),
+                  const SizedBox(height: 12),
+                  _buildSettingsCard(
+                    context,
+                    items: [
+                      _SettingsItem(
+                        icon: Icons.notifications_active_rounded,
+                        iconColor: AppPalette.amber,
+                        title: 'Event reminders',
+                        subtitle: 'Get notified before events start',
+                        trailing: Switch.adaptive(
+                          value: allowReminders,
+                          activeColor: scheme.primary,
+                          onChanged: (v) async {
+                            HapticFeedback.selectionClick();
+                            await _setBool(_kAllowReminders, v);
+                            if (!mounted) return;
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      _SettingsItem(
+                        icon: Icons.campaign_rounded,
+                        iconColor: AppPalette.primaryBlue,
+                        title: 'Product updates',
+                        subtitle: 'Occasional news and features',
+                        trailing: Switch.adaptive(
+                          value: allowPromos,
+                          activeColor: scheme.primary,
+                          onChanged: (v) async {
+                            HapticFeedback.selectionClick();
+                            await _setBool(_kAllowPromos, v);
+                            if (!mounted) return;
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                      _SettingsItem(
+                        icon: Icons.settings_rounded,
+                        iconColor: scheme.outline,
+                        title: 'System settings',
+                        subtitle: 'Manage permissions',
+                        onTap: () => _openSystemNotificationSettings(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Support Section
+                  _buildSectionTitle(context, 'Support'),
+                  const SizedBox(height: 12),
+                  _buildSettingsCard(
+                    context,
+                    items: [
+                      _SettingsItem(
+                        icon: Icons.help_outline_rounded,
+                        iconColor: AppPalette.accentBlue,
+                        title: 'Help center',
+                        subtitle: 'FAQs and guides',
+                        onTap: () => _contactSupport(context),
+                      ),
+                      _SettingsItem(
+                        icon: Icons.bug_report_outlined,
+                        iconColor: AppPalette.amber,
+                        title: 'Report a bug',
+                        subtitle: 'Help us improve',
+                        onTap:
+                            () =>
+                                _contactSupport(context, subject: 'Bug Report'),
+                      ),
+                      _SettingsItem(
+                        icon: Icons.star_outline_rounded,
+                        iconColor: AppPalette.accentPurple,
+                        title: 'Review app',
+                        subtitle:
+                            Platform.isIOS
+                                ? 'Rate us on the App Store'
+                                : 'Rate us on Google Play',
+                        onTap: () {
+                          // Placeholder for store review integration
+                          SnackBarHelper.showInfo(
+                            context,
+                            'Store review coming soon!',
+                          );
+                        },
+                      ),
+                      _SettingsItem(
+                        icon: Icons.privacy_tip_outlined,
+                        iconColor: AppPalette.slate,
+                        title: 'Privacy & data',
+                        subtitle: 'View our privacy policy',
+                        onTap: () async {
+                          final base = AppConfig.apiUrl.replaceFirst(
+                            RegExp(r'/api/?$'),
+                            '',
+                          );
+                          final uri = Uri.parse('$base/data-deletion');
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Sign out / Sign in
+                  if (isAuthed)
+                    _buildSignOutButton(context, auth)
+                  else
+                    _buildSignInButton(context),
+
+                  const SizedBox(height: 32),
+
+                  // App version
+                  Center(
+                    child: Text(
+                      'EventEase • v1.0.0',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-            ],
-
-            // Notifications Section
-            _buildSectionTitle(context, 'Notifications'),
-            const SizedBox(height: 12),
-            _buildSettingsCard(
-              context,
-              items: [
-                _SettingsItem(
-                  icon: Icons.notifications_active_rounded,
-                  iconColor: AppPalette.amber,
-                  title: 'Event reminders',
-                  subtitle: 'Get notified before events start',
-                  trailing: Switch.adaptive(
-                    value: allowReminders,
-                    activeColor: scheme.primary,
-                    onChanged: (v) async {
-                      HapticFeedback.selectionClick();
-                      await _setBool(_kAllowReminders, v);
-                      if (!mounted) return;
-                      setState(() {});
-                    },
-                  ),
-                ),
-                _SettingsItem(
-                  icon: Icons.campaign_rounded,
-                  iconColor: AppPalette.primaryBlue,
-                  title: 'Product updates',
-                  subtitle: 'Occasional news and features',
-                  trailing: Switch.adaptive(
-                    value: allowPromos,
-                    activeColor: scheme.primary,
-                    onChanged: (v) async {
-                      HapticFeedback.selectionClick();
-                      await _setBool(_kAllowPromos, v);
-                      if (!mounted) return;
-                      setState(() {});
-                    },
-                  ),
-                ),
-                _SettingsItem(
-                  icon: Icons.settings_rounded,
-                  iconColor: scheme.outline,
-                  title: 'System settings',
-                  subtitle: 'Manage permissions',
-                  onTap: () => _openSystemNotificationSettings(context),
-                ),
-              ],
             ),
-            const SizedBox(height: 24),
-
-            // Support Section
-            _buildSectionTitle(context, 'Support'),
-            const SizedBox(height: 12),
-            _buildSettingsCard(
-              context,
-              items: [
-                _SettingsItem(
-                  icon: Icons.help_outline_rounded,
-                  iconColor: AppPalette.accentBlue,
-                  title: 'Help center',
-                  subtitle: 'FAQs and guides',
-                  onTap: () => _contactSupport(context),
-                ),
-                _SettingsItem(
-                  icon: Icons.bug_report_outlined,
-                  iconColor: AppPalette.amber,
-                  title: 'Report a bug',
-                  subtitle: 'Help us improve',
-                  onTap: () => _contactSupport(context, subject: 'Bug Report'),
-                ),
-                _SettingsItem(
-                  icon: Icons.star_outline_rounded,
-                  iconColor: AppPalette.accentPurple,
-                  title: 'Review app',
-                  subtitle:
-                      Platform.isIOS
-                          ? 'Rate us on the App Store'
-                          : 'Rate us on Google Play',
-                  onTap: () {
-                    // Placeholder for store review integration
-                    SnackBarHelper.showInfo(
-                      context,
-                      'Store review coming soon!',
-                    );
-                  },
-                ),
-                _SettingsItem(
-                  icon: Icons.privacy_tip_outlined,
-                  iconColor: AppPalette.slate,
-                  title: 'Privacy & data',
-                  subtitle: 'View our privacy policy',
-                  onTap: () async {
-                    final base = AppConfig.apiUrl.replaceFirst(
-                      RegExp(r'/api/?$'),
-                      '',
-                    );
-                    final uri = Uri.parse('$base/data-deletion');
-                    await launchUrl(uri, mode: LaunchMode.externalApplication);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Sign out / Sign in
-            if (isAuthed)
-              _buildSignOutButton(context, auth)
-            else
-              _buildSignInButton(context),
-
-            const SizedBox(height: 32),
-
-            // App version
-            Center(
-              child: Text(
-                'EventEase • v1.0.0',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurface.withValues(alpha: 0.4),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+          const FloatingBottomBar(),
+        ],
       ),
     );
   }
@@ -796,7 +812,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       style: theme.textTheme.labelLarge?.copyWith(
                         color:
                             isDark
-                                ? AppPalette.amber
+                                ? AppPalette.darkBg
                                 : scheme.onSurface.withValues(alpha: 0.5),
                         fontWeight: isDark ? FontWeight.w700 : FontWeight.w500,
                       ),

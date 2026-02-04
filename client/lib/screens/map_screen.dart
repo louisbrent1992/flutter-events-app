@@ -7,6 +7,7 @@ import '../components/custom_app_bar.dart';
 import '../components/event_poster_card.dart';
 import '../components/glass_surface.dart';
 import '../components/pill_chip.dart';
+import '../components/floating_bottom_bar.dart';
 import '../models/event.dart';
 import '../providers/discover_provider.dart';
 import '../theme/theme.dart';
@@ -199,6 +200,7 @@ class _MapScreenState extends State<MapScreen> {
                     ),
                   ),
                 ),
+                const FloatingBottomBar(),
               ],
             );
           },

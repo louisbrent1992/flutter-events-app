@@ -9,6 +9,7 @@ import '../providers/auth_provider.dart';
 import '../providers/discover_provider.dart';
 import '../theme/theme.dart';
 import '../components/glass_surface.dart';
+import '../components/floating_bottom_bar.dart';
 
 /// Premium EventEase Home screen with immersive discovery experience.
 ///
@@ -175,9 +176,12 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnim,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnim,
           child: SlideTransition(
             position: _slideAnim,
             child: SingleChildScrollView(
@@ -450,6 +454,9 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
       ),
+      const FloatingBottomBar(),
+    ],
+  ),
     );
   }
 

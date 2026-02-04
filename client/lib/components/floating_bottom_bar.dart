@@ -44,6 +44,14 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
         label: 'Discover',
         tutorialKey: TutorialKeys.bottomNavDiscover,
       ),
+      _NavItem(
+        route: '/map',
+        icon: Icons.map_outlined,
+        activeIcon: Icons.map_rounded,
+        label: 'Map',
+        tutorialKey:
+            TutorialKeys.bottomNavDiscover, // Reuse discover key or new one
+      ),
     ];
 
     if (isAuthed) {
@@ -79,19 +87,13 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
     return items;
   }
 
-  bool _shouldShow(BuildContext context) {
-    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
-    if (currentRoute.isEmpty) return false;
-    return _navItems(context).any((item) => item.route == currentRoute);
-  }
-
   int _currentIndex(BuildContext context) {
     final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
     final items = _navItems(context);
     for (int i = 0; i < items.length; i++) {
       if (items[i].route == currentRoute) return i;
     }
-    return 0;
+    return -1;
   }
 
   void _handleNavigation(BuildContext context, int index) {
@@ -119,7 +121,8 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
 
   @override
   Widget build(BuildContext context) {
-    if (!_shouldShow(context)) return const SizedBox.shrink();
+    // Show on all screens
+    // if (!_shouldShow(context)) return const SizedBox.shrink();
 
     final items = _navItems(context);
     final currentIndex = _currentIndex(context);
