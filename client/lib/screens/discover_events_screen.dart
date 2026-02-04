@@ -403,12 +403,10 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
   }
 
   Widget _buildEventCard(BuildContext context, Event event, {int index = 0}) {
-    // Alternate card heights for visual variety
-    final isAlternate = index % 3 == 1;
-
     return EventPosterCard(
       event: event,
-      compact: isAlternate,
+      compact: false, // Show large tiles by default
+
       trailing: GlassSurface(
         blurSigma: 14,
         borderRadius: BorderRadius.circular(AppRadii.full),
@@ -433,9 +431,8 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
       itemCount: 4,
       separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (context, i) {
-        final height = i % 2 == 0 ? 220.0 : 100.0;
         return Container(
-          height: height,
+          height: 280.0,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppRadii.xl),

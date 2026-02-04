@@ -145,8 +145,7 @@ async function fetchViaJinaAI(url) {
 			lastErr = err;
 			const code = err?.code ? ` (${err.code})` : "";
 			console.warn(
-				`⚠️  Jina fallback attempt ${attempt + 1}/${
-					JINA_AI_RETRIES + 1
+				`⚠️  Jina fallback attempt ${attempt + 1}/${JINA_AI_RETRIES + 1
 				} failed${code}: ${err?.message || err}`
 			);
 		}
@@ -289,7 +288,9 @@ router.post("/import", async (req, res) => {
 				},
 			],
 			response_format: { type: "json_schema", json_schema: eventSchema },
-			max_completion_tokens: 3500,
+			max_completion_tokens: 6000,
+			reasoning_effort: "minimal",
+			store: true,
 		});
 
 		const raw = completion.choices?.[0]?.message?.content || "{}";
@@ -338,7 +339,9 @@ router.post("/scan", async (req, res) => {
 				},
 			],
 			response_format: { type: "json_schema", json_schema: eventSchema },
-			max_completion_tokens: 3500,
+			max_completion_tokens: 6000,
+			reasoning_effort: "minimal",
+			store: true,
 		});
 
 		const raw = completion.choices?.[0]?.message?.content || "{}";
@@ -394,6 +397,8 @@ router.post("/plan", async (req, res) => {
 			"Generate a realistic itinerary as a sequence of event blocks with times and logistics.",
 			"Use ISO-8601 for times when possible; otherwise null.",
 			"Keep notes concise and actionable.",
+			"Result MUST be a valid JSON object matching the plan schema.",
+			"Return ONLY JSON. Do not use Markdown code blocks.",
 		].join("\n");
 
 		const completion = await client.chat.completions.create({
@@ -406,10 +411,19 @@ router.post("/plan", async (req, res) => {
 				},
 			],
 			response_format: { type: "json_schema", json_schema: planSchema },
-			max_completion_tokens: 4500,
+			max_completion_tokens: 16000,
+			reasoning_effort: "minimal",
+			store: true,
 		});
 
-		const raw = completion.choices?.[0]?.message?.content || "{}";
+		let raw = completion.choices?.[0]?.message?.content || "{}";
+
+		// No cleaning needed with structured output
+		// raw = raw.replace(/```json/g, "").replace(/```/g, "").trim();
+
+		if (process.env.NODE_ENV !== 'production') {
+			console.log("DEBUG: AI Plan Raw Response:", raw);
+		}
 		return res.json(JSON.parse(raw));
 	} catch (e) {
 		console.error("Planner error:", e);
