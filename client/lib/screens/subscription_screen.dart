@@ -498,9 +498,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
 
               SizedBox(height: AppSpacing.responsive(context)),
               Center(
-                child: TextButton(
-                  onPressed: provider.restorePurchases,
-                  child: const Text('Restore Purchases'),
+                child: Column(
+                  children: [
+                    TextButton(
+                      onPressed: provider.restorePurchases,
+                      child: const Text('Restore Purchases'),
+                    ),
+                    TextButton(
+                      onPressed: _openManageSubscriptions,
+                      child: const Text('Manage Subscriptions'),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 80), // Extra padding for bottom bar
@@ -1623,5 +1631,27 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         ],
       ),
     );
+  }
+
+  Future<void> _openManageSubscriptions() async {
+    Uri? url;
+    if (Platform.isIOS) {
+      url = Uri.parse('https://apps.apple.com/account/subscriptions');
+    } else if (Platform.isAndroid) {
+      url = Uri.parse('https://play.google.com/store/account/subscriptions');
+    }
+
+    if (url != null) {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url);
+      } else {
+        if (mounted) {
+          SnackBarHelper.showError(
+            context,
+            'Could not open subscriptions page.',
+          );
+        }
+      }
+    }
   }
 }
