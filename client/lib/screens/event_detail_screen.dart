@@ -364,12 +364,15 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                       size: 16,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _formatDate(widget.event.startAt!).toUpperCase(),
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                    Flexible(
+                      child: Text(
+                        _formatDate(widget.event.startAt!).toUpperCase(),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (widget.event.startAt != null) ...[

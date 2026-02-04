@@ -182,281 +182,293 @@ class _HomeScreenState extends State<HomeScreen>
             child: SafeArea(
               child: FadeTransition(
                 opacity: _fadeAnim,
-          child: SlideTransition(
-            position: _slideAnim,
-            child: SingleChildScrollView(
-              padding: EdgeInsets.only(top: AppSpacing.sm, bottom: 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Hero Section with Greeting
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.responsive(context),
-                    ),
+                child: SlideTransition(
+                  position: _slideAnim,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(top: AppSpacing.sm, bottom: 140),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _getGreeting(),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: scheme.onSurface.withValues(alpha: 0.6),
+                        // Hero Section with Greeting
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.responsive(context),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        ShaderMask(
-                          shaderCallback:
-                              (bounds) => LinearGradient(
-                                colors: [
-                                  AppPalette.primaryBlue,
-                                  AppPalette.accentBlue,
-                                ],
-                              ).createShader(bounds),
-                          child: Text(
-                            'Welcome to EventEase',
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Premium Search Bar
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.responsive(context),
-                    ),
-                    child: GestureDetector(
-                      onTap: () => _go(context, '/discover'),
-                      child: GlassSurface(
-                        blurSigma: 20,
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 16,
-                        ),
-                        enableGlow: true,
-                        glowColor: scheme.primary,
-                        glowIntensity: 0.15,
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.search_rounded,
-                              color: scheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Search events, venues, artists...',
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _getGreeting(),
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: scheme.onSurface.withValues(
-                                    alpha: 0.5,
+                                    alpha: 0.6,
                                   ),
                                 ),
                               ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: scheme.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(
-                                  AppRadii.sm,
+                              const SizedBox(height: 4),
+                              ShaderMask(
+                                shaderCallback:
+                                    (bounds) => LinearGradient(
+                                      colors: [
+                                        AppPalette.primaryBlue,
+                                        AppPalette.accentBlue,
+                                      ],
+                                    ).createShader(bounds),
+                                child: Text(
+                                  'Welcome to EventEase',
+                                  style: theme.textTheme.displaySmall?.copyWith(
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                              child: Icon(
-                                Icons.tune_rounded,
-                                size: 18,
-                                color: scheme.primary,
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Premium Search Bar
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.responsive(context),
+                          ),
+                          child: GestureDetector(
+                            onTap: () => _go(context, '/discover'),
+                            child: GlassSurface(
+                              blurSigma: 20,
+                              borderRadius: BorderRadius.circular(AppRadii.xl),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 16,
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Featured / Trending Section
-                  _buildSectionHeader(
-                    context,
-                    title: 'Trending Now',
-                    subtitle: 'Hot events this week',
-                    onViewAll: () => _go(context, '/discover'),
-                  ),
-                  const SizedBox(height: 14),
-                  if (discover.isLoading && discover.events.isEmpty)
-                    _buildLoadingCards(context)
-                  else if (discover.events.isEmpty)
-                    _buildEmptyState(context)
-                  else
-                    SizedBox(
-                      height: 260,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.responsive(context),
-                        ),
-                        itemCount: discover.events.take(6).length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 14),
-                        itemBuilder: (context, i) {
-                          final e = discover.events[i];
-                          return _buildFeaturedCard(context, e, index: i);
-                        },
-                      ),
-                    ),
-                  const SizedBox(height: 32),
-
-                  // Quick Categories Grid
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: AppSpacing.responsive(context),
-                    ),
-                    child: Text(
-                      'Browse by Category',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  _buildCategoryGrid(context, categories),
-                  const SizedBox(height: 32),
-
-                  // Upcoming Events List
-                  _buildSectionHeader(
-                    context,
-                    title: 'Coming Up',
-                    subtitle: 'Happening soon near you',
-                    onViewAll: () => _go(context, '/discover'),
-                  ),
-                  const SizedBox(height: 14),
-                  if (discover.events.length > 6)
-                    ...discover.events
-                        .skip(6)
-                        .take(4)
-                        .map(
-                          (e) => Padding(
-                            padding: EdgeInsets.only(
-                              left: AppSpacing.responsive(context),
-                              right: AppSpacing.responsive(context),
-                              bottom: 12,
-                            ),
-                            child: EventPosterCard(
-                              event: e,
-                              compact: true,
-                              onTap:
-                                  () => Navigator.pushNamed(
-                                    context,
-                                    '/eventDetail',
-                                    arguments: e,
+                              enableGlow: true,
+                              glowColor: scheme.primary,
+                              glowIntensity: 0.15,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.search_rounded,
+                                    color: scheme.onSurface.withValues(
+                                      alpha: 0.5,
+                                    ),
                                   ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Search events, venues, artists...',
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            color: scheme.onSurface.withValues(
+                                              alpha: 0.5,
+                                            ),
+                                          ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: scheme.primary.withValues(
+                                        alpha: 0.15,
+                                      ),
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.sm,
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      Icons.tune_rounded,
+                                      size: 18,
+                                      color: scheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
+                        const SizedBox(height: 24),
 
-                  // Guest Sign-in CTA
-                  if (!isAuthed) ...[
-                    const SizedBox(height: 24),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.responsive(context),
-                      ),
-                      child: GradientGlassSurface(
-                        borderRadius: BorderRadius.circular(AppRadii.xl),
-                        borderGradient: AppPalette.heroGradient,
-                        padding: const EdgeInsets.all(24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppPalette.accentBlue.withValues(
-                                      alpha: 0.2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadii.md,
-                                    ),
+                        // Featured / Trending Section
+                        _buildSectionHeader(
+                          context,
+                          title: 'Trending Now',
+                          subtitle: 'Hot events this week',
+                          onViewAll: () => _go(context, '/discover'),
+                        ),
+                        const SizedBox(height: 14),
+                        if (discover.isLoading && discover.events.isEmpty)
+                          _buildLoadingCards(context)
+                        else if (discover.events.isEmpty)
+                          _buildEmptyState(context)
+                        else
+                          SizedBox(
+                            height: 260,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.responsive(context),
+                              ),
+                              itemCount: discover.events.take(6).length,
+                              separatorBuilder:
+                                  (_, __) => const SizedBox(width: 14),
+                              itemBuilder: (context, i) {
+                                final e = discover.events[i];
+                                return _buildFeaturedCard(context, e, index: i);
+                              },
+                            ),
+                          ),
+                        const SizedBox(height: 32),
+
+                        // Quick Categories Grid
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.responsive(context),
+                          ),
+                          child: Text(
+                            'Browse by Category',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _buildCategoryGrid(context, categories),
+                        const SizedBox(height: 32),
+
+                        // Upcoming Events List
+                        _buildSectionHeader(
+                          context,
+                          title: 'Coming Up',
+                          subtitle: 'Happening soon near you',
+                          onViewAll: () => _go(context, '/discover'),
+                        ),
+                        const SizedBox(height: 14),
+                        if (discover.events.length > 6)
+                          ...discover.events
+                              .skip(6)
+                              .take(4)
+                              .map(
+                                (e) => Padding(
+                                  padding: EdgeInsets.only(
+                                    left: AppSpacing.responsive(context),
+                                    right: AppSpacing.responsive(context),
+                                    bottom: 12,
                                   ),
-                                  child: Icon(
-                                    Icons.auto_awesome_rounded,
-                                    color: AppPalette.accentBlue,
-                                    size: 24,
+                                  child: EventPosterCard(
+                                    event: e,
+                                    compact: true,
+                                    onTap:
+                                        () => Navigator.pushNamed(
+                                          context,
+                                          '/eventDetail',
+                                          arguments: e,
+                                        ),
                                   ),
                                 ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                              ),
+
+                        // Guest Sign-in CTA
+                        if (!isAuthed) ...[
+                          const SizedBox(height: 24),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
+                            ),
+                            child: GradientGlassSurface(
+                              borderRadius: BorderRadius.circular(AppRadii.xl),
+                              borderGradient: AppPalette.heroGradient,
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
                                     children: [
-                                      Text(
-                                        'Get Personalized',
-                                        style: theme.textTheme.titleMedium
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: AppPalette.accentBlue
+                                              .withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            AppRadii.md,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          Icons.auto_awesome_rounded,
+                                          color: AppPalette.accentBlue,
+                                          size: 24,
+                                        ),
                                       ),
-                                      Text(
-                                        'Sign in for AI-powered recommendations',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: scheme.onSurface
-                                                  .withValues(alpha: 0.7),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Get Personalized',
+                                              style: theme.textTheme.titleMedium
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
                                             ),
+                                            Text(
+                                              'Sign in for AI-powered recommendations',
+                                              style: theme.textTheme.bodySmall
+                                                  ?.copyWith(
+                                                    color: scheme.onSurface
+                                                        .withValues(alpha: 0.7),
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: FilledButton(
-                                    onPressed:
-                                        () => _go(
-                                          context,
-                                          '/login',
-                                          args: {'redirectRoute': '/home'},
+                                  const SizedBox(height: 20),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: FilledButton(
+                                          onPressed:
+                                              () => _go(
+                                                context,
+                                                '/login',
+                                                args: {
+                                                  'redirectRoute': '/home',
+                                                },
+                                              ),
+                                          child: const Text('Sign in'),
                                         ),
-                                    child: const Text('Sign in'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed:
-                                        () => _go(
-                                          context,
-                                          '/register',
-                                          args: {'redirectRoute': '/home'},
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: OutlinedButton(
+                                          onPressed:
+                                              () => _go(
+                                                context,
+                                                '/register',
+                                                args: {
+                                                  'redirectRoute': '/home',
+                                                },
+                                              ),
+                                          child: const Text('Create account'),
                                         ),
-                                    child: const Text('Create account'),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ],
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+          const FloatingBottomBar(),
+        ],
       ),
-      const FloatingBottomBar(),
-    ],
-  ),
     );
   }
 

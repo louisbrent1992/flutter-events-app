@@ -523,7 +523,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           ),
                           child: Icon(
                             Icons.edit_rounded,
-                            color: isDark ? AppPalette.darkBg : Colors.white,
+                            color: isDark ? Colors.white : AppPalette.darkBg,
                             size: 12,
                           ),
                         ),

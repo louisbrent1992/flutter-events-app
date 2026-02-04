@@ -370,9 +370,9 @@ class _MyEventsScreenState extends State<MyEventsScreen>
                     );
                   },
                 ),
-              ), // FadeTransition
-            ), // SafeArea
-          ), // Positioned.fill
+              ),
+            ),
+          ),
           const FloatingBottomBar(),
         ],
       ),
