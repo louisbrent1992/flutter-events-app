@@ -7,6 +7,9 @@ import 'package:eventease/services/credits_service.dart';
 import 'package:eventease/services/event_ai_service.dart';
 import 'package:eventease/theme/theme.dart';
 import 'package:eventease/providers/generated_plan_provider.dart';
+import 'package:eventease/components/glass_surface.dart';
+import 'package:eventease/components/section_header.dart';
+import 'package:eventease/components/pill_chip.dart';
 import '../models/event.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
@@ -58,7 +61,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                   onPressed: () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(
+                FilledButton(
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.pushNamed(context, '/subscription');
@@ -261,17 +264,32 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
       ),
       body: SafeArea(
         bottom: false,
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.responsive(context)),
           child: ListView(
+          padding: EdgeInsets.only(
+            left: AppSpacing.responsive(context),
+            right: AppSpacing.responsive(context),
+            top: AppSpacing.responsive(context, mobile: 10, tablet: 16, desktop: 18),
+            bottom: 140,
+          ),
             children: [
               Text(
                 'Tell us what you want and we’ll draft a schedule you can save.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
                 ),
               ),
-              SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: 14),
+
+            const SectionHeader(
+              title: 'Inputs',
+              subtitle: 'The more specific you are, the better the plan.',
+            ),
+            GlassSurface(
+              blurSigma: 18,
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
               TextField(
                 controller: _vibe,
                 decoration: const InputDecoration(
@@ -279,6 +297,38 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                   hintText: 'e.g. chill, energetic, artsy, classy…',
                 ),
               ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 40,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        PillChip(
+                          label: 'Chill',
+                          selected: _vibe.text.toLowerCase().contains('chill'),
+                          onTap: () => setState(() => _vibe.text = 'Chill'),
+                        ),
+                        const SizedBox(width: 10),
+                        PillChip(
+                          label: 'Energetic',
+                          selected: _vibe.text.toLowerCase().contains('energetic'),
+                          onTap: () => setState(() => _vibe.text = 'Energetic'),
+                        ),
+                        const SizedBox(width: 10),
+                        PillChip(
+                          label: 'Artsy',
+                          selected: _vibe.text.toLowerCase().contains('artsy'),
+                          onTap: () => setState(() => _vibe.text = 'Artsy'),
+                        ),
+                        const SizedBox(width: 10),
+                        PillChip(
+                          label: 'Date night',
+                          selected: _vibe.text.toLowerCase().contains('date'),
+                          onTap: () => setState(() => _vibe.text = 'Date night'),
+                        ),
+                      ],
+                    ),
+                  ),
               SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _budget,
@@ -300,7 +350,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 controller: _dates,
                 decoration: const InputDecoration(
                   labelText: 'Dates',
-                  hintText: 'e.g. Sat Dec 21 evening, or Dec 21–22',
+                      hintText: 'e.g. Sat evening, or Dec 21–22',
                 ),
               ),
               SizedBox(height: AppSpacing.md),
@@ -314,54 +364,117 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 ),
               ),
               SizedBox(height: AppSpacing.lg),
-              FilledButton.icon(
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
                 onPressed: _generatePlan,
                 icon: const Icon(Icons.auto_awesome_rounded),
                 label: const Text('Generate itinerary'),
               ),
+                  ),
+                ],
+              ),
+            ),
+
               if (_plan != null) ...[
                 SizedBox(height: AppSpacing.xl),
+              const SectionHeader(
+                title: 'Result',
+                subtitle: 'Review the itinerary, then save it as events.',
+              ),
+              GlassSurface(
+                blurSigma: 18,
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                 Text(
                   (_plan!['title'] ?? 'Your plan').toString(),
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+                      style: theme.textTheme.headlineMedium,
                   ),
-                ),
-                SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: 8),
                 if (_itinerary.isEmpty)
-                  const Text(
+                      Text(
                     'No itinerary items returned. Try again with more details.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.78),
                   ),
+                      )
+                    else
+                      Column(
+                        children: [
                 for (final raw in _itinerary)
                   if (raw is Map)
-                    Card(
-                      margin: EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: ListTile(
-                        title: Text((raw['title'] ?? 'Event').toString()),
-                        subtitle: Text(
+                              Padding(
+                                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                                child: GlassSurface(
+                                  blurSigma: 12,
+                                  borderRadius: BorderRadius.circular(AppRadii.lg),
+                                  tintColor: theme.colorScheme.surface,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.circle,
+                                        size: 10,
+                                        color: theme.colorScheme.secondary,
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              (raw['title'] ?? 'Event').toString(),
+                                              style: theme.textTheme.titleMedium,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
                           [
                                 raw['startAt']?.toString(),
                                 raw['venueName']?.toString(),
                               ]
                               .where(
                                 (s) =>
-                                    s != null && s.toString().trim().isNotEmpty,
+                                                        s != null &&
+                                                        s.toString().trim().isNotEmpty,
                               )
                               .join(' • '),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
+                                              style: theme.textTheme.bodySmall?.copyWith(
+                                                color: theme.colorScheme.onSurface.withValues(alpha: 0.75),
+                                              ),
+                                            ),
+                                            if ((raw['notes'] ?? '').toString().trim().isNotEmpty) ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                (raw['notes'] ?? '').toString(),
+                                                style: theme.textTheme.bodySmall?.copyWith(
+                                                  color: theme.colorScheme.onSurface.withValues(alpha: 0.80),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                         ),
                       ),
                     ),
-                SizedBox(height: AppSpacing.md),
+                        ],
+                      ),
+                    const SizedBox(height: 6),
                 OutlinedButton.icon(
                   onPressed: _saveAsEvents,
                   icon: const Icon(Icons.save_alt_rounded),
                   label: const Text('Save itinerary as events'),
                 ),
               ],
+                ),
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );

@@ -38,6 +38,7 @@ import 'package:eventease/providers/generated_plan_provider.dart';
 import 'package:eventease/screens/generated_plans_screen.dart';
 import 'package:eventease/screens/generated_plan_detail_screen.dart';
 import 'package:eventease/screens/random_event_screen.dart';
+import 'package:eventease/screens/map_screen.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:share_handler/share_handler.dart';
 import 'package:eventease/services/permission_service.dart';
@@ -604,6 +605,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   static final Map<String, Widget Function(dynamic)> _routes = {
     '/discover':
         (args) => const PersistentBannerLayout(child: DiscoverEventsScreen()),
+    '/map': (args) => const PersistentBannerLayout(child: MapScreen()),
     '/collections':
         (args) => const PersistentBannerLayout(child: EventCollectionsScreen()),
     '/collectionDetail': (args) {

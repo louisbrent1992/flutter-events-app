@@ -15,6 +15,7 @@ class TutorialKeys {
   static final GlobalKey creditBalance = GlobalKey();
   static final GlobalKey bottomNavHome = GlobalKey();
   static final GlobalKey bottomNavDiscover = GlobalKey();
+  static final GlobalKey bottomNavMap = GlobalKey();
   static final GlobalKey bottomNavMyEvents = GlobalKey();
   static final GlobalKey bottomNavGenerate = GlobalKey();
   static final GlobalKey bottomNavSettings = GlobalKey();

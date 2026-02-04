@@ -1,6 +1,6 @@
 {
 	"name": "eventease-server",
-	"version": "1.0.1",
+	"version": "1.2.0",
 	"description": "EventEase server",
 	"main": "index.js",
 	"scripts": {
@@ -8,7 +8,9 @@
 		"build": "npm install",
 		"dev": "nodemon index.js",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"send-notification": "node scripts/send-test-notification.js"
+		"send-notification": "node scripts/send-test-notification.js",
+		"build:ios": "cd ../client && flutter build ipa --release --export-options-plist=ios/export_options.plist",
+		"build:android": "cd ../client && flutter build appbundle --release"
 	},
 	"keywords": [
 		"eventease",

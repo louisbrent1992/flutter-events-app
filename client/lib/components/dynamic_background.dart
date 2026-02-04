@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:ui' show ImageFilter;
 import '../models/dynamic_ui.dart';
 import '../providers/dynamic_ui_provider.dart';
 import '../main.dart' show MyApp;
@@ -20,12 +21,6 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
   late final Animation<Alignment> _endAlign;
   bool _wasAnimatingBeforeKeyboard = false;
   bool _wasAnimatingBeforeTransition = false;
-
-  // Dark blue gradient colors for dark mode animation
-  static const List<Color> _darkModeGradientColors = [
-    Color(0xFF1E2A44), // Deep dark blue
-    Color(0xFF2D3A5C), // Slightly lighter dark blue
-  ];
 
   @override
   void initState() {
@@ -136,11 +131,54 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
     return Consumer<DynamicUiProvider>(
       builder: (context, dyn, _) {
         final DynamicBackgroundConfig? bg = dyn.config?.globalBackground;
-        if (bg == null) return const SizedBox.shrink();
-
         final theme = Theme.of(context);
+        final scheme = theme.colorScheme;
         final isDarkMode = theme.brightness == Brightness.dark;
+
+        // Fallback: if there is no remote background config, still render a
+        // premium animated gradient so the UI keeps the intended “poster/glass”
+        // aesthetic.
+        if (bg == null) {
+          return IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                final colors = [
+                  scheme.surface,
+                  scheme.primary.withValues(alpha: 0.15),
+                  scheme.secondary.withValues(alpha: 0.12),
+                  scheme.tertiary.withValues(alpha: 0.10),
+                ];
+
+                return Transform.scale(
+                  scale: _scaleAnim.value,
+                  alignment: _beginAlign.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: _beginAlign.value,
+                        end: _endAlign.value,
+                        colors: colors,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        }
+
         final double overlayOpacity = (bg.opacity ?? 1.0).clamp(0.0, 1.0);
+        // When using an image background, apply a mode-aware scrim so foreground
+        // content stays readable in both light and dark themes.
+        //
+        // - Light mode: brighten/soften the image (white scrim)
+        // - Dark mode: deepen the image (black scrim)
+        final Color scrimBaseColor = isDarkMode ? Colors.black : Colors.white;
+        // Light mode: reduce the heavy whitening so the background feels richer.
+        final double scrimStrength = isDarkMode ? 0.42 : 0.40;
+        final double scrimSoftStrength = isDarkMode ? 0.18 : 0.18;
+        final double imageBlur = isDarkMode ? 0.0 : 6.0;
 
         // Note: This widget should be placed inside a Positioned.fill or SizedBox.expand
         // when used in a Stack to ensure it fills the available space
@@ -153,18 +191,26 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                   animation: _controller,
                   builder: (context, child) {
                     final double scale = bg.kenBurns ? _scaleAnim.value : 1.0;
+                    final url = bg.imageUrl ?? '';
+                    final isAsset = url.startsWith('assets/');
+                    final alignment =
+                        bg.kenBurns ? _beginAlign.value : Alignment.center;
                     return Transform.scale(
                       scale: scale,
-                      child: Image.network(
-                        bg.imageUrl!,
-                        fit: BoxFit.cover,
-                        alignment: Alignment.center,
-                        color:
-                            isDarkMode
-                                ? Colors.black.withValues(alpha: 0.3)
-                                : null,
-                        colorBlendMode: isDarkMode ? BlendMode.darken : null,
-                      ),
+                      child:
+                          isAsset
+                              ? Image.asset(
+                                url,
+                                fit: BoxFit.cover,
+                                alignment: alignment,
+                                filterQuality: FilterQuality.low,
+                              )
+                              : Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                alignment: alignment,
+                                filterQuality: FilterQuality.low,
+                              ),
                     );
                   },
                 )
@@ -172,10 +218,16 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                 AnimatedBuilder(
                   animation: _controller,
                   builder: (context, _) {
-                    // Use dark blue gradient colors for dark mode
+                    // Use theme-aware colors if no colors are provided in the config
+                    // or if it's dark mode and we want to enforce theme colors.
                     final List<Color> colors =
-                        isDarkMode
-                            ? _darkModeGradientColors
+                        (bg.colors.isEmpty || isDarkMode)
+                            ? [
+                              scheme.surface,
+                              scheme.primary.withValues(alpha: 0.15),
+                              scheme.secondary.withValues(alpha: 0.12),
+                              scheme.tertiary.withValues(alpha: 0.10),
+                            ]
                             : bg.colors
                                 .map(_parseColor)
                                 .whereType<Color>()
@@ -183,18 +235,26 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
 
                     if (colors.length < 2) return const SizedBox.shrink();
 
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin:
-                              bg.animateGradient
-                                  ? _beginAlign.value
-                                  : Alignment.topLeft,
-                          end:
-                              bg.animateGradient
-                                  ? _endAlign.value
-                                  : Alignment.bottomRight,
-                          colors: colors,
+                    final double scale = bg.kenBurns ? _scaleAnim.value : 1.0;
+                    final alignment =
+                        bg.kenBurns ? _beginAlign.value : Alignment.center;
+
+                    return Transform.scale(
+                      scale: scale,
+                      alignment: alignment,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin:
+                                bg.animateGradient
+                                    ? _beginAlign.value
+                                    : Alignment.topLeft,
+                            end:
+                                bg.animateGradient
+                                    ? _endAlign.value
+                                    : Alignment.bottomRight,
+                            colors: colors,
+                          ),
                         ),
                       ),
                     );
@@ -202,19 +262,65 @@ class _DynamicGlobalBackgroundState extends State<DynamicGlobalBackground>
                 )
               else if (bg.hasSolidColor)
                 Container(
-                  color: _parseColor(
-                    bg.colors.first,
-                  )?.withValues(alpha: overlayOpacity),
+                  color:
+                      (bg.colors.isEmpty)
+                          ? scheme.surface
+                          : _parseColor(
+                            bg.colors.first,
+                          )?.withValues(alpha: overlayOpacity),
                 ),
 
-              if (bg.hasImage && overlayOpacity < 1.0)
-                Container(
-                  color: Colors.black.withValues(alpha: 1.0 - overlayOpacity),
+              // Image readability layer (scrim + optional blur).
+              if (bg.hasImage)
+                Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (imageBlur > 0)
+                      BackdropFilter(
+                        filter: ImageFilter.blur(
+                          sigmaX: imageBlur,
+                          sigmaY: imageBlur,
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    // Light-mode color wash to avoid a dull/flat look.
+                    if (!isDarkMode)
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              scheme.primary.withValues(alpha: 0.10),
+                              scheme.secondary.withValues(alpha: 0.08),
+                              scheme.tertiary.withValues(alpha: 0.06),
+                            ],
+                          ),
+                        ),
+                      ),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            scrimBaseColor.withValues(alpha: scrimStrength),
+                            scrimBaseColor.withValues(alpha: scrimSoftStrength),
+                            scrimBaseColor.withValues(alpha: scrimStrength),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Respect server-configured opacity: treat it as "how much of the image shows through".
+                    // Lower opacity => stronger scrim.
+                    if (overlayOpacity < 1.0)
+                      Container(
+                        color: scrimBaseColor.withValues(
+                          alpha: 1.0 - overlayOpacity,
+                        ),
+                      ),
+                  ],
                 ),
-
-              // Additional darkening overlay for dark mode images
-              if (bg.hasImage && isDarkMode)
-                Container(color: Colors.black.withValues(alpha: 0.4)),
             ],
           ),
         );

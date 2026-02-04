@@ -41,6 +41,8 @@ function parseDateQuery(v) {
   return d;
 }
 
+const { fetchSeatgeekEvents } = require("../utils/seatgeekAPI");
+
 // GET /api/discover
 router.get("/discover", async (req, res) => {
   try {
@@ -54,6 +56,7 @@ router.get("/discover", async (req, res) => {
     const from = parseDateQuery(req.query.from);
     const to = parseDateQuery(req.query.to);
 
+    // 1. Fetch internal events from Firestore
     // Fetch a bounded set of recent discover events (MVP).
     // Keep this reasonably small to avoid expensive scans.
     const MAX_SCAN = 400;
@@ -66,8 +69,6 @@ router.get("/discover", async (req, res) => {
         .limit(MAX_SCAN)
         .get();
     } catch (_) {
-      // If startAt is missing on many docs, orderBy can fail.
-      // Fall back to createdAt ordering in that case.
       snap = await db
         .collection("discoverEvents")
         .orderBy("createdAt", "desc")
@@ -75,14 +76,25 @@ router.get("/discover", async (req, res) => {
         .get();
     }
 
-    const raw = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const rawInternal = snap.docs.map((d) => ({
+      id: d.id,
+      source: "internal",
+      ...d.data()
+    }));
 
+    // 2. Fetch external events from SeatGeek
+    const sgEvents = await fetchSeatgeekEvents({
+      keyword: q,
+      city: city
+    });
+
+    // 3. Filter Internal Events
     const qLower = safeLower(q);
     const categoryLower = safeLower(category);
     const cityLower = safeLower(city);
     const regionLower = safeLower(region);
 
-    const filtered = raw.filter((e) => {
+    const filteredInternal = rawInternal.filter((e) => {
       // Allow soft-disable.
       if (e && e.isDiscoverable === false) return false;
 
@@ -120,13 +132,39 @@ router.get("/discover", async (req, res) => {
       return true;
     });
 
-    const total = filtered.length;
+    // 4. Combine and Sort
+    // We combine: filtered internal + external API results
+
+    let allEvents = [
+      ...filteredInternal,
+      ...sgEvents
+    ];
+
+    // Deduplicate logic
+    const seenIds = new Set();
+    allEvents = allEvents.filter(e => {
+      if (seenIds.has(e.id)) return false;
+      seenIds.add(e.id);
+      return true;
+    });
+
+    // Sort by Date (Ascending: soonest first)
+    allEvents.sort((a, b) => {
+      const dateA = a.startAt ? new Date(a.startAt).getTime() : 0;
+      const dateB = b.startAt ? new Date(b.startAt).getTime() : 0;
+      // If date is missing/invalid, push to end
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateA - dateB;
+    });
+
+    const total = allEvents.length;
     const totalPages = Math.max(1, Math.ceil(total / limit));
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
     const offset = (page - 1) * limit;
-    const events = filtered.slice(offset, offset + limit).map((e) => ({
+    const events = allEvents.slice(offset, offset + limit).map((e) => ({
       ...e,
       startAt: toIsoOrNull(e.startAt),
       endAt: toIsoOrNull(e.endAt),
@@ -143,6 +181,10 @@ router.get("/discover", async (req, res) => {
         totalPages,
         hasNextPage,
         hasPrevPage,
+        sources: {
+          internal: filteredInternal.length,
+          seatgeek: sgEvents.length
+        }
       },
     });
   } catch (e) {

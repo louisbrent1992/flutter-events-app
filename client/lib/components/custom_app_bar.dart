@@ -42,6 +42,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.useLogo = false,
     this.logoHeight = 60.0,
     this.floatingButtons,
+    // UI cleanup: keep AppBars minimal by default (only back/drawer + overflow menu).
     this.showCreditsPill = true,
   });
 
@@ -74,9 +75,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     logoHeight ??
                     AppSizing.responsiveIconSize(
                       context,
-                      mobile: 60.0,
-                      tablet: 72.0,
-                      desktop: 80.0,
+                      mobile: 80.0,
+                      tablet: 96.0,
+                      desktop: 110.0,
                     ),
               )
               : Text(

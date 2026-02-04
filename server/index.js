@@ -57,18 +57,20 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./middleware/auth");
 const eventRoutes = require("./routes/events");
 const discoverRoutes = require("./routes/discover");
+const communityRoutes = require("./routes/community");
 const collectionsRoutes = require("./routes/collections");
 const generatedHistoryRoutes = require("./routes/generatedHistory");
 const randomRoutes = require("./routes/random");
 const dataDeletionRoutes = require("./routes/data-deletion");
 const uiRoutes = require("./routes/ui");
+const commentsRoutes = require("./routes/comments");
 
 const app = express();
 const port = process.env.PORT || 8080;
 
 // Middleware
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors());
 
 // Timeout middleware removed to prevent conflicts with long-running operations
@@ -92,7 +94,9 @@ app.use("/api/ai/events", aiEventRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/community", cacheMiddleware(2 * 60 * 1000), communityRoutes); // Cache community routes for 2 minutes
 app.use("/api/collections", collectionsRoutes);
+app.use("/api/comments", commentsRoutes);
 app.use("/api/generated", generatedHistoryRoutes);
 app.use("/api", randomRoutes);
 app.use("/api", discoverRoutes);

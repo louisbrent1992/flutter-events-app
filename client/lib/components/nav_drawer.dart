@@ -1,461 +1,540 @@
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../providers/event_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../providers/auth_provider.dart';
+import '../providers/subscription_provider.dart';
+import '../providers/theme_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../theme/theme.dart';
-import '../utils/image_utils.dart';
-import '../utils/snackbar_helper.dart';
+import 'glass_surface.dart';
 
+/// Premium navigation drawer with gradient hero and organized links.
+///
+/// Features:
+/// - Gradient header with user avatar
+/// - Glass-morphic navigation tiles
+/// - Pro subscription badge
+/// - Quick theme toggle
+/// - Modern iconography
 class NavDrawer extends StatelessWidget {
   const NavDrawer({super.key});
-
-  User? get _user => FirebaseAuth.instance.currentUser;
-  bool get _isAuthed => _user != null;
-
-  int _upcomingCount(List<dynamic> events) {
-    final now = DateTime.now();
-    int count = 0;
-    for (final e in events) {
-      try {
-        final startAt = (e as dynamic).startAt as DateTime?;
-        if (startAt != null && startAt.isAfter(now)) count++;
-      } catch (_) {
-        // ignore
-      }
-    }
-    return count;
-  }
-
-  void _requireAuthOrNavigate(
-    BuildContext context, {
-    required String route,
-    String? authMessage,
-  }) {
-    if (_isAuthed) {
-      Navigator.of(context).pop();
-      Navigator.of(context).pushNamed(route);
-      return;
-    }
-
-    SnackBarHelper.showInfo(
-      context,
-      authMessage ?? 'Sign in to use this feature.',
-      action: SnackBarAction(
-        label: 'Sign in',
-        onPressed: () {
-          Navigator.of(context).pushNamed(
-            '/login',
-            arguments: {'redirectRoute': route},
-          );
-        },
-      ),
-    );
-    Navigator.of(context).pop();
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
+    final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final auth = context.watch<AuthService>();
+    final profile = context.watch<UserProfileProvider>();
+    final subscription = context.watch<SubscriptionProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
+    final isAuthed = auth.user != null;
+    final isPremium = subscription.isPremium;
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+
+    final displayName =
+        (profile.profile['displayName'] as String?) ??
+        auth.user?.displayName ??
+        (isAuthed ? 'Event Organizer' : 'Guest');
+    final email = auth.user?.email ?? 'Explore mode';
+    final photoUrl = _photoUrl(profile.profile, auth.user?.photoURL);
 
     return Drawer(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors:
-                isDark
-                    ? const [
-                      Color(0xFF1A1B2E),
-                      Color(0xFF16213E),
-                      Color(0xFF0F3460),
-                    ]
-                    : const [
-                      Color(0xFFFFF8F0),
-                      Color(0xFFF7EDF0),
-                      Color(0xFFFFE5CC),
-                    ],
-            stops: const [0.0, 0.6, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _Header(user: _user),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Consumer<EventProvider>(
-                  builder: (context, ep, _) {
-                    final total =
-                        (ep.totalEvents > 0) ? ep.totalEvents : ep.userEvents.length;
-                    final upcoming = _upcomingCount(ep.userEvents);
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: _StatPill(
-                            icon: Icons.event_rounded,
-                            label: 'Saved',
-                            value: _isAuthed ? '$total' : '—',
-                            onTap:
-                                () => _requireAuthOrNavigate(
-                                  context,
-                                  route: '/myEvents',
-                                  authMessage: 'Sign in to save events.',
-                                ),
-                            locked: !_isAuthed,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: _StatPill(
-                            icon: Icons.calendar_month_rounded,
-                            label: 'Upcoming',
-                            value: _isAuthed ? '$upcoming' : '—',
-                            onTap:
-                                () => _requireAuthOrNavigate(
-                                  context,
-                                  route: '/myEvents',
-                                  authMessage: 'Sign in to view your upcoming events.',
-                                ),
-                            locked: !_isAuthed,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  children: [
-                    _SectionTitle('Navigation'),
-                    _NavTile(
-                      icon: Icons.home_rounded,
-                      title: 'Home',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pushNamed('/home');
-                      },
-                    ),
-                    _NavTile(
-                      icon: Icons.event_available_rounded,
-                      title: 'My Events',
-                      trailingLocked: !_isAuthed,
-                      onTap:
-                          () => _requireAuthOrNavigate(
-                            context,
-                            route: '/myEvents',
-                            authMessage: 'Sign in to save events.',
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    _SectionTitle('Tools'),
-                    _NavTile(
-                      icon: Icons.add_box_rounded,
-                      title: 'Create Event',
-                      trailingLocked: !_isAuthed,
-                      onTap:
-                          () => _requireAuthOrNavigate(
-                            context,
-                            route: '/createEvent',
-                            authMessage: 'Sign in to create events.',
-                          ),
-                    ),
-                    _NavTile(
-                      icon: Icons.link_rounded,
-                      title: 'Import Event',
-                      trailingLocked: !_isAuthed,
-                      onTap:
-                          () => _requireAuthOrNavigate(
-                            context,
-                            route: '/importEvent',
-                            authMessage: 'Sign in to import events.',
-                          ),
-                    ),
-                    _NavTile(
-                      icon: Icons.auto_awesome_rounded,
-                      title: 'AI Planner',
-                      trailingLocked: !_isAuthed,
-                      onTap:
-                          () => _requireAuthOrNavigate(
-                            context,
-                            route: '/planner',
-                            authMessage: 'Sign in to use the AI planner.',
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    _SectionTitle('Settings'),
-                    _NavTile(
-                      icon: Icons.settings_rounded,
-                      title: 'Settings',
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context).pushNamed('/settings');
-                      },
-                    ),
-                    _NavTile(
-                      icon: Icons.workspace_premium_rounded,
-                      title: 'Subscription',
-                      trailingLocked: !_isAuthed,
-                      onTap:
-                          () => _requireAuthOrNavigate(
-                            context,
-                            route: '/subscription',
-                            authMessage: 'Sign in to manage your subscription.',
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        'EventEase • v1.0.0',
-                        style: TextStyle(
-                          color: (isDark ? Colors.white : cs.onSurface).withValues(
-                            alpha: 0.7,
-                          ),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Header extends StatelessWidget {
-  final User? user;
-  const _Header({required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            primaryColor.withValues(alpha: 0.95),
-            secondaryColor.withValues(alpha: 0.9),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
+      backgroundColor: isDark ? AppPalette.darkBg : AppPalette.lightBg,
+      width: 300,
+      child: Column(
         children: [
-          Consumer<UserProfileProvider>(
-            builder: (context, profileProvider, _) {
-              final photoUrl =
-                  profileProvider.profile['photoURL'] as String? ??
-                  user?.photoURL ??
-                  ImageUtils.defaultProfileIconUrl;
-              return CircleAvatar(
-                radius: 26,
-                backgroundColor: Colors.white.withValues(alpha: 0.15),
-                child: ClipOval(
-                  child:
-                      ImageUtils.isAssetPath(photoUrl)
-                          ? Image.asset(photoUrl, width: 52, height: 52, fit: BoxFit.cover)
-                          : CachedNetworkImage(
-                            imageUrl: photoUrl,
-                            width: 52,
-                            height: 52,
-                            fit: BoxFit.cover,
-                            errorWidget:
-                                (_, __, ___) => Icon(
-                                  Icons.person_rounded,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                          ),
-                ),
-              );
-            },
+          // Header
+          _buildHeader(
+            context,
+            displayName: displayName,
+            email: email,
+            photoUrl: photoUrl,
+            isAuthed: isAuthed,
+            isPremium: isPremium,
           ),
-          const SizedBox(width: 12),
+
+          // Navigation items
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               children: [
-                Text(
-                  user?.displayName ?? (user == null ? 'Guest' : 'Event Organizer'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                // Primary navigation
+                _NavItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  isSelected: currentRoute == '/home',
+                  onTap: () => _navigate(context, '/home'),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  user?.email ?? (user == null ? 'Browse mode' : 'Signed in'),
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.9),
-                    fontSize: 12,
+                _NavItem(
+                  icon: Icons.explore_rounded,
+                  label: 'Discover',
+                  isSelected: currentRoute == '/discover',
+                  onTap: () => _navigate(context, '/discover'),
+                ),
+                _NavItem(
+                  icon: Icons.map_rounded,
+                  label: 'Map',
+                  isSelected: currentRoute == '/map',
+                  onTap: () => _navigate(context, '/map'),
+                ),
+                if (isAuthed) ...[
+                  _NavItem(
+                    icon: Icons.calendar_today_rounded,
+                    label: 'My Events',
+                    isSelected: currentRoute == '/myEvents',
+                    onTap: () => _navigate(context, '/myEvents'),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  _NavItem(
+                    icon: Icons.collections_bookmark_rounded,
+                    label: 'Collections',
+                    isSelected: currentRoute == '/collections',
+                    onTap: () => _navigate(context, '/collections'),
+                  ),
+                ],
+
+                const SizedBox(height: 8),
+                Divider(
+                  color: scheme.outline.withValues(alpha: 0.1),
+                  indent: 8,
+                  endIndent: 8,
+                ),
+                const SizedBox(height: 8),
+
+                // Tools
+                Padding(
+                  padding: const EdgeInsets.only(left: 16, bottom: 8),
+                  child: Text(
+                    'TOOLS',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.4),
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                _NavItem(
+                  icon: Icons.link_rounded,
+                  label: 'Import Event',
+                  isSelected: currentRoute == '/importEvent',
+                  accentColor: AppPalette.accentBlue,
+                  onTap: () => _navigate(context, '/importEvent'),
+                ),
+                _NavItem(
+                  icon: Icons.add_circle_outline_rounded,
+                  label: 'Create Event',
+                  isSelected: currentRoute == '/createEvent',
+                  accentColor: AppPalette.emerald,
+                  onTap: () => _navigate(context, '/createEvent'),
+                ),
+                if (isAuthed)
+                  _NavItem(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'AI Planner',
+                    isSelected: currentRoute == '/planner',
+                    accentColor: AppPalette.amber,
+                    badge: isPremium ? null : 'PRO',
+                    onTap: () => _navigate(context, '/planner'),
+                  ),
+
+                const SizedBox(height: 8),
+                Divider(
+                  color: scheme.outline.withValues(alpha: 0.1),
+                  indent: 8,
+                  endIndent: 8,
+                ),
+                const SizedBox(height: 8),
+
+                // Settings & Support
+                _NavItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  isSelected: currentRoute == '/settings',
+                  onTap: () => _navigate(context, '/settings'),
+                ),
+                _NavItem(
+                  icon: Icons.help_outline_rounded,
+                  label: 'Help & Support',
+                  onTap: () => _navigate(context, '/settings'),
                 ),
               ],
             ),
           ),
-          if (user == null)
-            FilledButton.tonal(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.18),
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushNamed('/login');
-              },
-              child: const Text('Sign in'),
-            )
-          else
-            Icon(
-              Icons.verified_rounded,
-              color: Colors.white.withValues(alpha: isDark ? 0.95 : 0.9),
-            ),
+
+          // Footer with theme toggle
+          _buildFooter(context, themeProvider),
         ],
       ),
     );
   }
-}
 
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  const _SectionTitle(this.text);
+  String? _photoUrl(Map<String, dynamic> profile, String? fallback) {
+    final url = (profile['photoURL'] as String?) ?? fallback;
+    final v = (url ?? '').trim();
+    return v.isEmpty ? null : v;
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cs = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontWeight: FontWeight.w800,
-          fontSize: 12,
-          letterSpacing: 0.6,
-          color: (isDark ? Colors.white : cs.onSurface).withValues(alpha: 0.75),
+  void _navigate(BuildContext context, String route) {
+    Navigator.pop(context); // Close drawer
+    final currentRoute = ModalRoute.of(context)?.settings.name ?? '';
+    if (currentRoute != route) {
+      HapticFeedback.selectionClick();
+      Navigator.pushReplacementNamed(context, route);
+    }
+  }
+
+  Widget _buildHeader(
+    BuildContext context, {
+    required String displayName,
+    required String email,
+    required String? photoUrl,
+    required bool isAuthed,
+    required bool isPremium,
+  }) {
+    final theme = Theme.of(context);
+    final topPadding = MediaQuery.of(context).padding.top;
+
+    return Container(
+      padding: EdgeInsets.only(
+        top: topPadding + 20,
+        left: 20,
+        right: 20,
+        bottom: 24,
+      ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppPalette.primaryBlue.withValues(alpha: 0.4),
+            AppPalette.accentBlue.withValues(alpha: 0.3),
+            AppPalette.slate.withValues(alpha: 0.25),
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _NavTile extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final VoidCallback onTap;
-  final bool trailingLocked;
-
-  const _NavTile({
-    required this.icon,
-    required this.title,
-    required this.onTap,
-    this.trailingLocked = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ListTile(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      leading: Icon(icon, color: isDark ? Colors.white : cs.onSurface),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : cs.onSurface,
-        ),
-      ),
-      trailing: trailingLocked ? const Icon(Icons.lock_rounded, size: 18) : null,
-      onTap: onTap,
-    );
-  }
-}
-
-class _StatPill extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final VoidCallback onTap;
-  final bool locked;
-
-  const _StatPill({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.onTap,
-    required this.locked,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.white.withValues(alpha: isDark ? 0.06 : 0.75),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.35),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(fontWeight: FontWeight.w800),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Avatar
+          Row(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: photoUrl == null ? AppPalette.accentGradient : null,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 2,
                   ),
-                  Text(
-                    locked ? '$label  🔒' : label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppPalette.primaryBlue.withValues(alpha: 0.3),
+                      blurRadius: 16,
                     ),
+                  ],
+                ),
+                child: ClipOval(
+                  child:
+                      photoUrl == null
+                          ? Icon(
+                            Icons.person_rounded,
+                            size: 28,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          )
+                          : CachedNetworkImage(
+                            imageUrl: photoUrl,
+                            fit: BoxFit.cover,
+                            errorWidget:
+                                (_, __, ___) => Icon(
+                                  Icons.person_rounded,
+                                  size: 28,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                          ),
+                ),
+              ),
+              const Spacer(),
+              if (isPremium)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
                   ),
-                ],
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppPalette.amber,
+                        AppPalette.amber.withValues(alpha: 0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppPalette.amber.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.star_rounded, size: 16, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        'PRO',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Name
+          Text(
+            displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            email,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
+          ),
+          if (!isAuthed) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pushNamed(context, '/login');
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppPalette.primaryBlue,
+                ),
+                child: const Text('Sign In'),
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, ThemeProvider themeProvider) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = themeProvider.isDarkMode;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      padding: EdgeInsets.only(
+        left: 12,
+        right: 12,
+        top: 12,
+        bottom: 12 + bottomPadding,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: scheme.outline.withValues(alpha: 0.1)),
+        ),
+      ),
+      child: GlassSurface(
+        blurSigma: 16,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        padding: const EdgeInsets.all(4),
+        child: Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap:
+                    isDark
+                        ? () {
+                          HapticFeedback.selectionClick();
+                          themeProvider.toggleTheme();
+                        }
+                        : null,
+                child: AnimatedContainer(
+                  duration: AppAnimations.fast,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: !isDark ? scheme.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Icon(
+                    Icons.light_mode_rounded,
+                    size: 20,
+                    color:
+                        !isDark
+                            ? Colors.white
+                            : scheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: GestureDetector(
+                onTap:
+                    !isDark
+                        ? () {
+                          HapticFeedback.selectionClick();
+                          themeProvider.toggleTheme();
+                        }
+                        : null,
+                child: AnimatedContainer(
+                  duration: AppAnimations.fast,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? scheme.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Icon(
+                    Icons.dark_mode_rounded,
+                    size: 20,
+                    color:
+                        isDark
+                            ? AppPalette.darkBg
+                            : scheme.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final Color? accentColor;
+  final String? badge;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.isSelected = false,
+    this.accentColor,
+    this.badge,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final color = accentColor ?? scheme.primary;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: AnimatedContainer(
+            duration: AppAnimations.fast,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color:
+                  isSelected
+                      ? color.withValues(alpha: 0.15)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color:
+                        isSelected
+                            ? color.withValues(alpha: 0.2)
+                            : scheme.surfaceContainerHighest.withValues(
+                              alpha: isDark ? 0.3 : 0.5,
+                            ),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color:
+                        isSelected
+                            ? color
+                            : scheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
+                      color:
+                          isSelected
+                              ? color
+                              : scheme.onSurface.withValues(alpha: 0.85),
+                    ),
+                  ),
+                ),
+                if (badge != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppPalette.amber,
+                          AppPalette.amber.withValues(alpha: 0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadii.full),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
+                if (isSelected)
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

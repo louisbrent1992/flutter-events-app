@@ -25,7 +25,7 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
     _startTime = DateTime.now();
-    _logo = const AssetImage('assets/icons/FullLogo_Transparent.png');
+    _logo = const AssetImage('assets/icons/eventease_logo.png');
     // Preload the logo so the splash animation doesn't "pop" on first paint.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -126,6 +126,26 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Mode-specific adjustments for better contrast
+    final backdropGlowColor =
+        isDark
+            ? Colors.white.withValues(alpha: 0.25) // Brighter in dark mode
+            : Colors.black.withValues(alpha: 0.15); // Darker in light mode
+
+    final backdropCircleColor =
+        isDark
+            ? Colors.white.withValues(
+              alpha: 0.12,
+            ) // Lighter backdrop in dark mode
+            : Colors.white.withValues(alpha: 0.08); // Subtle in light mode
+
+    final primaryGlowIntensity =
+        isDark ? 0.30 : 0.20; // Stronger glow in dark mode
+    final primaryGlowBlur = isDark ? 40.0 : 30.0; // Larger glow in dark mode
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Center(
@@ -133,11 +153,86 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fade,
           child: ScaleTransition(
             scale: _scale,
-            child: Image(
-              image: _logo,
-              width: 280,
-              filterQuality: FilterQuality.high,
-              fit: BoxFit.contain,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Outer backdrop glow - stronger in dark mode
+                Container(
+                  width: 400,
+                  height: 400,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: backdropGlowColor,
+                        blurRadius: isDark ? 100 : 80,
+                        spreadRadius: isDark ? 40 : 30,
+                      ),
+                      BoxShadow(
+                        color: scheme.primary.withValues(
+                          alpha: isDark ? 0.15 : 0.08,
+                        ),
+                        blurRadius: isDark ? 120 : 100,
+                        spreadRadius: isDark ? 50 : 40,
+                      ),
+                    ],
+                  ),
+                ),
+                // Backdrop circle - more visible in dark mode
+                Container(
+                  width: 360,
+                  height: 360,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: backdropCircleColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: backdropGlowColor,
+                        blurRadius: isDark ? 60 : 50,
+                        spreadRadius: isDark ? 20 : 15,
+                      ),
+                    ],
+                  ),
+                ),
+                // Logo with mode-appropriate outer glow
+                Container(
+                  width: 340,
+                  height: 340,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      // Primary color glow - stronger in dark mode
+                      BoxShadow(
+                        color: scheme.primary.withValues(
+                          alpha: primaryGlowIntensity,
+                        ),
+                        blurRadius: primaryGlowBlur,
+                        spreadRadius: isDark ? 8 : 5,
+                      ),
+                      // Secondary glow for depth
+                      BoxShadow(
+                        color: (isDark ? Colors.white : Colors.black)
+                            .withValues(alpha: isDark ? 0.15 : 0.10),
+                        blurRadius: isDark ? 25 : 20,
+                        spreadRadius: isDark ? 4 : 2,
+                      ),
+                      // Subtle inner glow in dark mode
+                      if (isDark)
+                        BoxShadow(
+                          color: scheme.secondary.withValues(alpha: 0.12),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                    ],
+                  ),
+                  child: Image(
+                    image: _logo,
+                    width: 340,
+                    filterQuality: FilterQuality.high,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
