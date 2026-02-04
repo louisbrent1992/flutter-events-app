@@ -26,7 +26,13 @@ class _MapScreenState extends State<MapScreen> {
   final _search = TextEditingController();
   Event? _selected;
 
-  final List<String> _chips = const ['All', 'Theater & Stand-up', 'Music', 'Art', 'Tech'];
+  final List<String> _chips = const [
+    'All',
+    'Theater & Stand-up',
+    'Music',
+    'Art',
+    'Tech',
+  ];
   String _chip = 'All';
 
   @override
@@ -49,7 +55,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _matchesChip(Event e) {
     if (_chip == 'All') return true;
     final c = _chip.toLowerCase();
-    return e.categories.any((x) => x.toLowerCase().contains(c.split(' ').first));
+    return e.categories.any(
+      (x) => x.toLowerCase().contains(c.split(' ').first),
+    );
   }
 
   @override
@@ -90,7 +98,12 @@ class _MapScreenState extends State<MapScreen> {
                 Positioned(
                   left: AppSpacing.responsive(context),
                   right: AppSpacing.responsive(context),
-                  top: AppSpacing.responsive(context, mobile: 10, tablet: 16, desktop: 18),
+                  top: AppSpacing.responsive(
+                    context,
+                    mobile: 10,
+                    tablet: 16,
+                    desktop: 18,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -120,7 +133,8 @@ class _MapScreenState extends State<MapScreen> {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: _chips.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 10),
+                          separatorBuilder:
+                              (_, __) => const SizedBox(width: 10),
                           itemBuilder: (context, i) {
                             final label = _chips[i];
                             return PillChip(
@@ -171,7 +185,11 @@ class _MapScreenState extends State<MapScreen> {
                                 event: e,
                                 compact: true,
                                 onTap: () {
-                                  Navigator.pushNamed(context, '/eventDetail', arguments: e);
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/eventDetail',
+                                    arguments: e,
+                                  );
                                 },
                               ),
                             ),
@@ -213,37 +231,51 @@ class _MapPin extends StatelessWidget {
     return Positioned.fill(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          return Positioned(
-            left: constraints.maxWidth * dx,
-            top: constraints.maxHeight * dy,
-            child: GestureDetector(
-              onTap: onTap,
-              child: AnimatedContainer(
-                duration: AppAnimations.fast,
-                curve: AppAnimations.defaultCurve,
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: selected ? scheme.secondary : scheme.onSurface.withValues(alpha: 0.12),
-                  border: Border.all(
-                    color: selected ? scheme.secondary : scheme.outline.withValues(alpha: 0.22),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (selected ? scheme.secondary : scheme.primary).withValues(alpha: 0.30),
-                      blurRadius: 18,
-                      offset: const Offset(0, 10),
+          return Stack(
+            children: [
+              Positioned(
+                left: constraints.maxWidth * dx,
+                top: constraints.maxHeight * dy,
+                child: GestureDetector(
+                  onTap: onTap,
+                  child: AnimatedContainer(
+                    duration: AppAnimations.fast,
+                    curve: AppAnimations.defaultCurve,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          selected
+                              ? scheme.secondary
+                              : scheme.onSurface.withValues(alpha: 0.12),
+                      border: Border.all(
+                        color:
+                            selected
+                                ? scheme.secondary
+                                : scheme.outline.withValues(alpha: 0.22),
+                        width: 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: (selected ? scheme.secondary : scheme.primary)
+                              .withValues(alpha: 0.30),
+                          blurRadius: 18,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.place_rounded,
-                  size: selected ? 22 : 20,
-                  color: selected ? Colors.white : scheme.onSurface.withValues(alpha: 0.80),
+                    child: Icon(
+                      Icons.place_rounded,
+                      size: selected ? 22 : 20,
+                      color:
+                          selected
+                              ? Colors.white
+                              : scheme.onSurface.withValues(alpha: 0.80),
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           );
         },
       ),
@@ -252,7 +284,11 @@ class _MapPin extends StatelessWidget {
 }
 
 class _MapGridPainter extends CustomPainter {
-  _MapGridPainter({required this.line, required this.glowA, required this.glowB});
+  _MapGridPainter({
+    required this.line,
+    required this.glowA,
+    required this.glowB,
+  });
 
   final Color line;
   final Color glowA;
@@ -260,9 +296,10 @@ class _MapGridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = line
-      ..strokeWidth = 1;
+    final paint =
+        Paint()
+          ..color = line
+          ..strokeWidth = 1;
 
     // Subtle grid.
     const step = 48.0;
@@ -274,23 +311,35 @@ class _MapGridPainter extends CustomPainter {
     }
 
     // Soft color washes.
-    final a = Paint()
-      ..shader = RadialGradient(
-        colors: [glowA, Colors.transparent],
-      ).createShader(Rect.fromCircle(center: Offset(size.width * 0.25, size.height * 0.35), radius: size.width * 0.7));
+    final a =
+        Paint()
+          ..shader = RadialGradient(
+            colors: [glowA, Colors.transparent],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.25, size.height * 0.35),
+              radius: size.width * 0.7,
+            ),
+          );
     canvas.drawRect(Offset.zero & size, a);
 
-    final b = Paint()
-      ..shader = RadialGradient(
-        colors: [glowB, Colors.transparent],
-      ).createShader(Rect.fromCircle(center: Offset(size.width * 0.75, size.height * 0.55), radius: size.width * 0.7));
+    final b =
+        Paint()
+          ..shader = RadialGradient(
+            colors: [glowB, Colors.transparent],
+          ).createShader(
+            Rect.fromCircle(
+              center: Offset(size.width * 0.75, size.height * 0.55),
+              radius: size.width * 0.7,
+            ),
+          );
     canvas.drawRect(Offset.zero & size, b);
   }
 
   @override
   bool shouldRepaint(covariant _MapGridPainter oldDelegate) {
-    return oldDelegate.line != line || oldDelegate.glowA != glowA || oldDelegate.glowB != glowB;
+    return oldDelegate.line != line ||
+        oldDelegate.glowA != glowA ||
+        oldDelegate.glowB != glowB;
   }
 }
-
-

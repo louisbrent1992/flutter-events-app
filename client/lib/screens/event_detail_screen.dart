@@ -151,7 +151,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     final buffer = StringBuffer();
     buffer.writeln(widget.event.title);
     if (widget.event.startAt != null) {
-      buffer.writeln(_formatDate(widget.event.startAt!));
+      final dt = widget.event.startAt!;
+      buffer.writeln('${_formatDate(dt)} at ${_formatTime(dt)}');
     }
     if ((widget.event.venueName ?? '').isNotEmpty) {
       buffer.writeln(widget.event.venueName);
@@ -167,9 +168,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
   String _formatDate(DateTime dt) {
     final local = dt.toLocal();
-    return DateFormat('EEEE, MMMM d').format(local) +
-        ' AT ' +
-        DateFormat('h:mm a').format(local);
+    return DateFormat('EEEE, MMMM d').format(local);
   }
 
   @override
