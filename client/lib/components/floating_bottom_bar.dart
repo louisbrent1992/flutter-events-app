@@ -44,13 +44,6 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
         label: 'Discover',
         tutorialKey: TutorialKeys.bottomNavDiscover,
       ),
-      _NavItem(
-        route: '/map',
-        icon: Icons.map_outlined,
-        activeIcon: Icons.map_rounded,
-        label: 'Map',
-        tutorialKey: TutorialKeys.bottomNavMap,
-      ),
     ];
 
     if (isAuthed) {

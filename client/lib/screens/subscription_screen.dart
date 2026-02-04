@@ -114,13 +114,25 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
                       controller: _tabController,
                       children: [
                         // Subscriptions Tab
-                        _buildSubscriptionsTab(context, subscriptionProvider, bottomPadding),
+                        _buildSubscriptionsTab(
+                          context,
+                          subscriptionProvider,
+                          bottomPadding,
+                        ),
 
                         // Bundles Tab
-                        _buildBundlesTab(context, subscriptionProvider, bottomPadding),
+                        _buildBundlesTab(
+                          context,
+                          subscriptionProvider,
+                          bottomPadding,
+                        ),
 
                         // Credits Tab
-                        _buildCreditsTab(context, subscriptionProvider, bottomPadding),
+                        _buildCreditsTab(
+                          context,
+                          subscriptionProvider,
+                          bottomPadding,
+                        ),
                       ],
                     ),
                   ),
@@ -247,18 +259,29 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     SubscriptionProvider provider,
   ) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final credits = provider.credits;
     final bool isUnlimited = provider.unlimitedUsage;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.xl),
         gradient: LinearGradient(
-          colors: [
-            colorScheme.primaryContainer,
-            colorScheme.secondaryContainer,
-          ],
+          colors: [AppPalette.primaryBlue, AppPalette.accentBlue],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppPalette.primaryBlue.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.1),
+          width: 1,
         ),
       ),
       child: Row(
@@ -266,39 +289,62 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
         children: [
           _buildCreditBadge(
             context,
-            icon: Icons.share,
+            icon: Icons.share_rounded,
             label: 'Imports',
             count: credits['eventImports'] ?? 0,
             unlimited: isUnlimited,
+            color: Colors.white,
+          ),
+          Container(
+            width: 1,
+            height: 48,
+            color: Colors.white.withValues(alpha: 0.15),
           ),
           _buildCreditBadge(
             context,
             icon: Icons.auto_awesome_rounded,
-            label: 'Plans',
+            label: 'AI Plans',
             count: credits['aiPlans'] ?? 0,
             unlimited: isUnlimited,
+            color: Colors.white,
           ),
-          if (provider.isPremium)
+          if (provider.isPremium) ...[
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.star, size: 16, color: Colors.white),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Premium',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+              width: 1,
+              height: 48,
+              color: Colors.white.withValues(alpha: 0.15),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 1.5,
                     ),
                   ),
-                ],
-              ),
+                  child: const Icon(
+                    Icons.workspace_premium_rounded,
+                    color: AppPalette.amber,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Premium',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
             ),
+          ],
         ],
       ),
     );
@@ -310,19 +356,30 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     required String label,
     required int count,
     required bool unlimited,
+    Color color = Colors.white,
   }) {
     final theme = Theme.of(context);
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 24),
-        const SizedBox(height: 4),
+        Icon(icon, size: 26, color: color),
+        const SizedBox(height: 6),
         Text(
           unlimited ? '∞' : '$count',
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: color,
+            height: 1.0,
           ),
         ),
-        Text(label, style: theme.textTheme.bodySmall),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: color.withValues(alpha: 0.8),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ],
     );
   }
@@ -356,7 +413,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                120 + bottomPadding, // Extra space for floating bar + safe area
+                120 +
+                bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,7 +511,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  Widget _buildBundlesTab(BuildContext context, SubscriptionProvider provider, double bottomPadding) {
+  Widget _buildBundlesTab(
+    BuildContext context,
+    SubscriptionProvider provider,
+    double bottomPadding,
+  ) {
     final bundles = provider.nonConsumables;
 
     if (bundles.isEmpty) {
@@ -477,7 +539,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                120 + bottomPadding, // Extra space for floating bar + safe area
+                120 +
+                bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -539,7 +602,11 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
     );
   }
 
-  Widget _buildCreditsTab(BuildContext context, SubscriptionProvider provider, double bottomPadding) {
+  Widget _buildCreditsTab(
+    BuildContext context,
+    SubscriptionProvider provider,
+    double bottomPadding,
+  ) {
     final credits = provider.consumables;
 
     if (credits.isEmpty) {
@@ -563,7 +630,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen>
             top: AppSpacing.responsive(context),
             bottom:
                 AppSpacing.responsive(context) +
-                120 + bottomPadding, // Extra space for floating bar + safe area
+                120 +
+                bottomPadding, // Extra space for floating bar + safe area
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
