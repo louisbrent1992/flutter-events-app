@@ -9,6 +9,7 @@ import 'package:eventease/components/event_poster_card.dart';
 import 'package:eventease/components/glass_surface.dart';
 import '../models/event.dart';
 import '../utils/snackbar_helper.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 /// Premium My Events screen with calendar integration.
 ///
@@ -507,19 +508,90 @@ class _MyEventsScreenState extends State<MyEventsScreen>
   }
 
   Widget _buildCalendar(BuildContext context, List<Event> events) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
     return GlassSurface(
       blurSigma: 18,
       borderRadius: BorderRadius.circular(AppRadii.xl),
-      padding: const EdgeInsets.all(4),
-      child: CalendarDatePicker(
-        initialDate: _selectedDay,
-        firstDate: DateTime(DateTime.now().year - 2, 1, 1),
-        lastDate: DateTime(DateTime.now().year + 2, 12, 31),
-        currentDate: DateTime.now(),
-        onDateChanged: (d) {
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TableCalendar(
+        focusedDay: _selectedDay,
+        firstDay: DateTime(DateTime.now().year - 2, 1, 1),
+        lastDay: DateTime(DateTime.now().year + 2, 12, 31),
+        currentDay: DateTime.now(),
+        calendarFormat: CalendarFormat.month,
+        availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+        startingDayOfWeek: StartingDayOfWeek.monday,
+
+        selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+        onDaySelected: (selectedDay, focusedDay) {
           HapticFeedback.selectionClick();
-          setState(() => _selectedDay = d);
+          setState(() => _selectedDay = selectedDay);
         },
+
+        eventLoader: (day) {
+          return events
+              .where((e) => e.startAt != null && isSameDay(e.startAt!, day))
+              .toList();
+        },
+
+        headerStyle: HeaderStyle(
+          formatButtonVisible: false,
+          titleCentered: true,
+          titleTextStyle: theme.textTheme.titleMedium!.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          leftChevronIcon: Icon(
+            Icons.chevron_left_rounded,
+            color: scheme.onSurface,
+          ),
+          rightChevronIcon: Icon(
+            Icons.chevron_right_rounded,
+            color: scheme.onSurface,
+          ),
+          headerPadding: const EdgeInsets.symmetric(vertical: 8),
+        ),
+
+        daysOfWeekStyle: DaysOfWeekStyle(
+          weekdayStyle: theme.textTheme.labelSmall!.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.6),
+            fontWeight: FontWeight.bold,
+          ),
+          weekendStyle: theme.textTheme.labelSmall!.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.4),
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+
+        calendarStyle: CalendarStyle(
+          todayDecoration: BoxDecoration(
+            color: scheme.primary.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+          ),
+          selectedDecoration: BoxDecoration(
+            color: scheme.primary,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: scheme.primary.withValues(alpha: 0.3),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          markerDecoration: BoxDecoration(
+            color: isDark ? AppPalette.accentBlue : AppPalette.primaryBlue,
+            shape: BoxShape.circle,
+          ),
+          markersMaxCount: 3,
+          defaultTextStyle: theme.textTheme.bodyMedium!,
+          weekendTextStyle: theme.textTheme.bodyMedium!.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.5),
+          ),
+          outsideDaysVisible: false,
+        ),
       ),
     );
   }
