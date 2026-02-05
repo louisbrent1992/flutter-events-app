@@ -54,7 +54,7 @@ class GlassSurface extends StatelessWidget {
         (isDark
             ? AppPalette.darkSurfaceElevated
             : AppPalette.lightSurfaceElevated);
-    final double baseAlpha = isDark ? 0.85 : 0.90;
+    final double baseAlpha = isDark ? 0.75 : 0.88;
     final Color resolvedTint = baseTint.withValues(alpha: baseAlpha);
 
     // Subtle border for definition
