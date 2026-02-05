@@ -19,9 +19,11 @@ class AppPalette {
   // Dark Mode - Refined, Professional
   static const Color darkBg = Color(0xFF0F172A); // Slate-900
   static const Color darkSurface = Color(0xFF1E293B); // Slate-800
-  static const Color darkSurfaceElevated = Color(0xFF334155); // Slate-700
+  static const Color darkSurfaceElevated = Color(
+    0xFF475569,
+  ); // Slate-600 (Lighter)
   static const Color darkSurfaceMuted = Color(0xFF1E293B);
-  static const Color darkInk = Color(0xFFF8FAFC); // Slate-50
+  static const Color darkInk = Color(0xFFFFFFFF); // Pure White
 
   // Light Mode - Clean, Professional
   static const Color lightBg = Color(0xFFF8FAFC); // Slate-50
