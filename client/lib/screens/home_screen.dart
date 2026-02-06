@@ -29,40 +29,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _search = TextEditingController();
-  String _selectedMood = 'All';
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
   late Animation<Offset> _slideAnim;
-
-  // Mood categories for browsing - Professional colors
-  static const List<Map<String, dynamic>> _moods = [
-    {'label': 'All', 'icon': Icons.apps_rounded, 'color': null},
-    {
-      'label': 'Featured',
-      'icon': Icons.star_rounded,
-      'color': Color(0xFF1E40AF), // Primary blue
-    },
-    {
-      'label': 'Business',
-      'icon': Icons.business_center_rounded,
-      'color': Color(0xFF475569), // Slate
-    },
-    {
-      'label': 'Networking',
-      'icon': Icons.people_rounded,
-      'color': Color(0xFF059669), // Emerald
-    },
-    {
-      'label': 'Workshop',
-      'icon': Icons.school_rounded,
-      'color': Color(0xFF0284C7), // Sky
-    },
-    {
-      'label': 'Conference',
-      'icon': Icons.event_rounded,
-      'color': Color(0xFFD97706), // Amber
-    },
-  ];
 
   void _go(BuildContext context, String route, {Object? args}) {
     Navigator.pushNamed(context, route, arguments: args);
@@ -225,66 +194,6 @@ class _HomeScreenState extends State<HomeScreen>
                           ),
                         ),
                         const SizedBox(height: 20),
-
-                        // Premium Search Bar
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: AppSpacing.responsive(context),
-                          ),
-                          child: GestureDetector(
-                            onTap: () => _go(context, '/discover'),
-                            child: GlassSurface(
-                              blurSigma: 20,
-                              borderRadius: BorderRadius.circular(AppRadii.xl),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 16,
-                              ),
-                              enableGlow: true,
-                              glowColor: scheme.primary,
-                              glowIntensity: 0.15,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    Icons.search_rounded,
-                                    color: scheme.onSurface.withValues(
-                                      alpha: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'Search events, venues, artists...',
-                                      style: theme.textTheme.bodyMedium
-                                          ?.copyWith(
-                                            color: scheme.onSurface.withValues(
-                                              alpha: 0.5,
-                                            ),
-                                          ),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: scheme.primary.withValues(
-                                        alpha: 0.15,
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadii.sm,
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.tune_rounded,
-                                      size: 18,
-                                      color: scheme.primary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
 
                         // Featured / Trending Section
                         _buildSectionHeader(

@@ -92,6 +92,9 @@ function mapSeatgeekEvent(sgEvent) {
         address: venue.address || "",
         city: venue.city || "",
         region: venue.state || "",
+        // Add coordinates from venue location
+        latitude: venue.location?.lat || null,
+        longitude: venue.location?.lon || null,
         categories: [sgEvent.type].filter(Boolean),
         imageUrl: imageUrl,
         externalUrl: sgEvent.url,

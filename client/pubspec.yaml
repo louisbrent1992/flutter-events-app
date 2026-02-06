@@ -87,6 +87,9 @@ dependencies:
   device_info_plus: ^10.1.2
   flutter_facebook_auth: ^7.1.2
   table_calendar: ^3.2.0
+  google_maps_flutter: ^2.6.1
+  flutter_google_places_sdk: ^0.4.3
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:

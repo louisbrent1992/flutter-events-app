@@ -159,7 +159,7 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
         centerTitle: false,
         automaticallyImplyLeading: true,
         actions: [
-          // View toggle would go here
+          // Filter toggle
           IconButton(
             icon: Icon(
               _showFilters
@@ -218,21 +218,42 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
                                 Icons.search_rounded,
                                 color: scheme.onSurface.withValues(alpha: 0.5),
                               ),
-                              suffixIcon:
-                                  _searchController.text.isNotEmpty
-                                      ? IconButton(
-                                        icon: Icon(
-                                          Icons.close_rounded,
-                                          color: scheme.onSurface.withValues(
-                                            alpha: 0.5,
-                                          ),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (_searchController.text.isNotEmpty)
+                                    IconButton(
+                                      icon: Icon(
+                                        Icons.close_rounded,
+                                        color: scheme.onSurface.withValues(
+                                          alpha: 0.5,
                                         ),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _onSearchChanged('');
-                                        },
-                                      )
-                                      : null,
+                                      ),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _onSearchChanged('');
+                                      },
+                                    ),
+                                  // Map Button
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8.0),
+                                    child: IconButton(
+                                      tooltip: 'View Map',
+                                      style: IconButton.styleFrom(
+                                        backgroundColor: scheme.primary
+                                            .withValues(alpha: 0.1),
+                                        foregroundColor: scheme.primary,
+                                      ),
+                                      icon: const Icon(Icons.map_outlined),
+                                      onPressed:
+                                          () => Navigator.pushNamed(
+                                            context,
+                                            '/map',
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                               border: InputBorder.none,
                               enabledBorder: InputBorder.none,
                               focusedBorder: InputBorder.none,

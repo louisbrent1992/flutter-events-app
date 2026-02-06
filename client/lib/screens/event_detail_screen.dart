@@ -239,8 +239,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                   SliverToBoxAdapter(
                     child: _buildContent(context, accentColor),
                   ),
-                  // Bottom padding
-                  SliverToBoxAdapter(child: SizedBox(height: 120)),
+                  // Bottom padding - space for floating actions + bottom bar
+                  SliverToBoxAdapter(child: SizedBox(height: 220)),
                 ],
               ),
 
@@ -430,6 +430,9 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     final isDark = theme.brightness == Brightness.dark;
     final topPadding = MediaQuery.of(context).padding.top;
 
+    // Determine if we should show glass (over image) or solid (over content)
+    final showGlass = opacity < 0.5;
+
     return Positioned(
       top: 0,
       left: 0,
@@ -456,24 +459,33 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         ),
         child: Row(
           children: [
-            // Back button
-            GlassSurface(
-              blurSigma: opacity < 0.5 ? 16 : 0,
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              padding: EdgeInsets.zero,
-              tintColor:
-                  opacity < 0.5
-                      ? Colors.black.withValues(alpha: 0.2)
-                      : Colors.transparent,
-              borderColor: Colors.transparent,
-              child: IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(
-                  Icons.arrow_back_rounded,
-                  color: opacity < 0.5 ? Colors.white : scheme.onSurface,
+            // Back button - always visible with appropriate styling
+            if (showGlass)
+              GlassSurface(
+                blurSigma: 16,
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                padding: EdgeInsets.zero,
+                tintColor: Colors.black.withValues(alpha: 0.3),
+                borderColor: Colors.white.withValues(alpha: 0.2),
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(Icons.arrow_back_rounded, color: scheme.onSurface),
                 ),
               ),
-            ),
 
             const Spacer(),
 
@@ -497,24 +509,30 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
             const Spacer(),
 
-            // Share button
-            GlassSurface(
-              blurSigma: opacity < 0.5 ? 16 : 0,
-              borderRadius: BorderRadius.circular(AppRadii.full),
-              padding: EdgeInsets.zero,
-              tintColor:
-                  opacity < 0.5
-                      ? Colors.black.withValues(alpha: 0.2)
-                      : Colors.transparent,
-              borderColor: Colors.transparent,
-              child: IconButton(
-                onPressed: _share,
-                icon: Icon(
-                  Icons.share_rounded,
-                  color: opacity < 0.5 ? Colors.white : scheme.onSurface,
+            // Share button - always visible with appropriate styling
+            if (showGlass)
+              GlassSurface(
+                blurSigma: 16,
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                padding: EdgeInsets.zero,
+                tintColor: Colors.black.withValues(alpha: 0.3),
+                borderColor: Colors.white.withValues(alpha: 0.2),
+                child: IconButton(
+                  onPressed: _share,
+                  icon: const Icon(Icons.share_rounded, color: Colors.white),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: _share,
+                  icon: Icon(Icons.share_rounded, color: scheme.onSurface),
                 ),
               ),
-            ),
           ],
         ),
       ),
@@ -806,7 +824,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
     return Positioned(
-      bottom: 20 + bottomPadding,
+      bottom: 100 + bottomPadding, // Above the floating bottom bar
       left: AppSpacing.responsive(context),
       right: AppSpacing.responsive(context),
       child: Row(

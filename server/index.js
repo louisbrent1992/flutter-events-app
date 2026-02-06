@@ -64,6 +64,10 @@ const randomRoutes = require("./routes/random");
 const dataDeletionRoutes = require("./routes/data-deletion");
 const uiRoutes = require("./routes/ui");
 const commentsRoutes = require("./routes/comments");
+const placesRoutes = require("./routes/places");
+
+// Import cron jobs
+const { initPlacesCacheCron } = require("./utils/placesCacheCron");
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -102,6 +106,7 @@ app.use("/api", randomRoutes);
 app.use("/api", discoverRoutes);
 app.use("/api", dataDeletionRoutes);
 app.use("/api", uiRoutes);
+app.use("/api/places", cacheMiddleware(10 * 60 * 1000), placesRoutes); // Cache places for 10 minutes
 
 // Server homepage
 app.get("/", (req, res) => {
@@ -142,4 +147,7 @@ app.listen(port, () => {
 	console.log(`${envEmoji} Environment: ${env.toUpperCase()}`);
 	console.log(`🚀 Server running on port ${port}`);
 	console.log(`🔗 API available at http://localhost:${port}/api`);
+
+	// Initialize cron jobs
+	initPlacesCacheCron();
 });

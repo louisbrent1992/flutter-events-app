@@ -44,14 +44,6 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
         label: 'Discover',
         tutorialKey: TutorialKeys.bottomNavDiscover,
       ),
-      _NavItem(
-        route: '/map',
-        icon: Icons.map_outlined,
-        activeIcon: Icons.map_rounded,
-        label: 'Map',
-        tutorialKey:
-            TutorialKeys.bottomNavDiscover, // Reuse discover key or new one
-      ),
     ];
 
     if (isAuthed) {
@@ -67,7 +59,7 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
           route: '/planner',
           icon: Icons.auto_awesome_outlined,
           activeIcon: Icons.auto_awesome_rounded,
-          label: 'AI',
+          label: 'AI Planner',
           tutorialKey: TutorialKeys.bottomNavGenerate,
           isAccent: true,
         ),
@@ -92,6 +84,10 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
     final items = _navItems(context);
     for (int i = 0; i < items.length; i++) {
       if (items[i].route == currentRoute) return i;
+      // Also highlight AI tab if on import screen
+      if (items[i].route == '/planner' && currentRoute == '/importEvent') {
+        return i;
+      }
     }
     return -1;
   }
@@ -113,10 +109,157 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
       return;
     }
 
+    // Show AI options sheet for planner route
+    if (targetRoute == '/planner') {
+      HapticFeedback.selectionClick();
+      _showAIOptionsSheet(context);
+      return;
+    }
+
     if (currentRoute != targetRoute) {
       HapticFeedback.selectionClick();
       Navigator.pushReplacementNamed(context, targetRoute);
     }
+  }
+
+  void _showAIOptionsSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder:
+          (context) => Container(
+            margin: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? AppPalette.darkSurfaceElevated : scheme.surface,
+              borderRadius: BorderRadius.circular(AppRadii.xl),
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Create Event',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildAIOptionTile(
+                  context,
+                  icon: Icons.auto_awesome_rounded,
+                  title: 'AI Event Planner',
+                  subtitle: 'Generate events with AI assistance',
+                  gradient: AppPalette.heroGradient,
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/planner');
+                  },
+                ),
+                _buildAIOptionTile(
+                  context,
+                  icon: Icons.add_circle_outline_rounded,
+                  title: 'Import Event',
+                  subtitle: 'Add event from URL or manually',
+                  gradient: LinearGradient(
+                    colors: [AppPalette.emerald, AppPalette.accentBlue],
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, '/importEvent');
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildAIOptionTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Gradient gradient,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.lg),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppRadii.lg),
+              border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(AppRadii.md),
+                  ),
+                  child: Icon(icon, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 16,
+                  color: scheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -322,9 +465,7 @@ class _FloatingBottomBarState extends State<FloatingBottomBar>
       case '/home':
         return 'Your personalized event feed';
       case '/discover':
-        return 'Explore new events';
-      case '/map':
-        return 'Find events nearby';
+        return 'Explore events and map';
       case '/myEvents':
         return 'Your saved events';
       case '/planner':

@@ -1,21 +1,26 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../components/custom_app_bar.dart';
 import '../components/event_poster_card.dart';
 import '../components/glass_surface.dart';
 import '../components/pill_chip.dart';
-import '../components/floating_bottom_bar.dart';
 import '../models/event.dart';
 import '../providers/discover_provider.dart';
+import '../services/google_maps_service.dart' hide LatLng;
 import '../theme/theme.dart';
 
-/// Map screen (stylized) inspired by the Behance mock.
+/// Map screen with Google Maps integration.
 ///
-/// Note: This is a lightweight “map-like” UI (pins + layout) without a real map SDK
-/// dependency, so it works offline and without additional packages.
+/// Features:
+/// - Real Google Maps with custom styling
+/// - Event markers with info windows
+/// - Bottom sheet with event cards
+/// - Category filtering
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -25,16 +30,30 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final _search = TextEditingController();
-  Event? _selected;
+  final _searchFocus = FocusNode();
+  GoogleMapController? _mapController;
+  Event? _selectedEvent;
+  Timer? _debounce;
+  List<PlacePrediction> _placePredictions = [];
+  bool _showPredictions = false;
+  String? _sessionToken;
+  bool _isLoadingLocation = false;
 
+  // Filter chips that match SeatGeek event categories
   final List<String> _chips = const [
     'All',
-    'Theater & Stand-up',
-    'Music',
-    'Art',
-    'Tech',
+    'Sports',
+    'Concerts',
+    'Theater',
+    'Comedy',
   ];
   String _chip = 'All';
+
+  // Default to a central US location, adjust based on your target
+  static const LatLng _defaultCenter = LatLng(
+    37.7749,
+    -122.4194,
+  ); // San Francisco
 
   @override
   void initState() {
@@ -50,21 +69,238 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void dispose() {
     _search.dispose();
+    _searchFocus.dispose();
+    _debounce?.cancel();
+    _mapController?.dispose();
     super.dispose();
   }
 
+  /// Search for places with debouncing
+  void _onSearchChanged(String query) {
+    _debounce?.cancel();
+    if (query.trim().isEmpty) {
+      setState(() {
+        _placePredictions = [];
+        _showPredictions = false;
+      });
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
+      // Generate session token for cost optimization
+      _sessionToken ??= DateTime.now().millisecondsSinceEpoch.toString();
+
+      final predictions = await GoogleMapsService.searchPlaces(
+        query,
+        sessionToken: _sessionToken,
+      );
+
+      if (mounted) {
+        setState(() {
+          _placePredictions = predictions;
+          _showPredictions = predictions.isNotEmpty;
+        });
+      }
+    });
+  }
+
+  /// Handle place selection from autocomplete
+  Future<void> _selectPlace(PlacePrediction prediction) async {
+    setState(() {
+      _showPredictions = false;
+      _search.text = prediction.mainText;
+    });
+    _searchFocus.unfocus();
+
+    // Get place details to get coordinates
+    final details = await GoogleMapsService.getPlaceDetails(
+      prediction.placeId,
+      sessionToken: _sessionToken,
+    );
+
+    // Clear session token after place selection (billing optimization)
+    _sessionToken = null;
+
+    if (details != null &&
+        details.latitude != null &&
+        details.longitude != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(details.latitude!, details.longitude!),
+          14.0,
+        ),
+      );
+    }
+  }
+
+  /// Open directions to a location
+  Future<void> _openDirections(Event event) async {
+    if (event.latitude == null || event.longitude == null) return;
+
+    final url = GoogleMapsService.getDirectionsUrl(
+      destinationLat: event.latitude!,
+      destinationLng: event.longitude!,
+      destinationName: event.venueName ?? event.title,
+    );
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  /// Navigate to user's current location
+  Future<void> _goToCurrentLocation() async {
+    setState(() => _isLoadingLocation = true);
+    try {
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Location permission denied')),
+            );
+          }
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Location permission permanently denied. Enable in Settings.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition();
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(position.latitude, position.longitude),
+          13.0,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Location error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingLocation = false);
+    }
+  }
+
+  /// Filter events by category chip
   bool _matchesChip(Event e) {
     if (_chip == 'All') return true;
-    final c = _chip.toLowerCase();
-    return e.categories.any(
-      (x) => x.toLowerCase().contains(c.split(' ').first),
-    );
+    final categories = e.categories.map((c) => c.toLowerCase()).toList();
+
+    switch (_chip) {
+      case 'Sports':
+        return categories.any(
+          (c) =>
+              c.contains('nfl') ||
+              c.contains('nba') ||
+              c.contains('mlb') ||
+              c.contains('nhl') ||
+              c.contains('ncaa') ||
+              c.contains('soccer') ||
+              c.contains('mls') ||
+              c.contains('sports') ||
+              c.contains('racing') ||
+              c.contains('motocross') ||
+              c.contains('boxing') ||
+              c.contains('mma') ||
+              c.contains('wrestling') ||
+              c.contains('tennis') ||
+              c.contains('golf'),
+        );
+      case 'Concerts':
+        return categories.any(
+          (c) =>
+              c.contains('concert') ||
+              c.contains('music') ||
+              c.contains('festival') ||
+              c.contains('rock') ||
+              c.contains('pop') ||
+              c.contains('hip_hop') ||
+              c.contains('country') ||
+              c.contains('jazz') ||
+              c.contains('classical'),
+        );
+      case 'Theater':
+        return categories.any(
+          (c) =>
+              c.contains('theater') ||
+              c.contains('broadway') ||
+              c.contains('musical') ||
+              c.contains('opera') ||
+              c.contains('ballet') ||
+              c.contains('dance'),
+        );
+      case 'Comedy':
+        return categories.any(
+          (c) =>
+              c.contains('comedy') ||
+              c.contains('stand_up') ||
+              c.contains('comedian'),
+        );
+      default:
+        return true;
+    }
+  }
+
+  /// Filter events that have valid coordinates
+  List<Event> _eventsWithLocation(List<Event> events) {
+    return events
+        .where(_matchesChip)
+        .where((e) => e.latitude != null && e.longitude != null)
+        .toList();
+  }
+
+  /// Build markers from events
+  Set<Marker> _buildMarkers(List<Event> events) {
+    return events.map((event) {
+      return Marker(
+        markerId: MarkerId(event.id.isNotEmpty ? event.id : event.title),
+        position: LatLng(event.latitude!, event.longitude!),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          _selectedEvent?.id == event.id
+              ? BitmapDescriptor.hueAzure
+              : BitmapDescriptor.hueRed,
+        ),
+        onTap: () {
+          setState(() => _selectedEvent = event);
+          // Center the map on the selected event
+          _mapController?.animateCamera(
+            CameraUpdate.newLatLng(LatLng(event.latitude!, event.longitude!)),
+          );
+        },
+      );
+    }).toSet();
+  }
+
+  /// Calculate initial camera position based on events
+  LatLng _calculateCenter(List<Event> events) {
+    if (events.isEmpty) return _defaultCenter;
+
+    double sumLat = 0;
+    double sumLng = 0;
+    for (final e in events) {
+      sumLat += e.latitude!;
+      sumLng += e.longitude!;
+    }
+    return LatLng(sumLat / events.length, sumLng / events.length);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -73,25 +309,27 @@ class _MapScreenState extends State<MapScreen> {
         bottom: false,
         child: Consumer<DiscoverProvider>(
           builder: (context, discover, _) {
-            final events = discover.events.where(_matchesChip).toList();
-            final pins = events.take(8).toList();
-            _selected ??= pins.isNotEmpty ? pins.first : null;
+            final events = _eventsWithLocation(discover.events);
+            final markers = _buildMarkers(events);
+            final center = _calculateCenter(events);
 
             return Stack(
               children: [
-                // "Map" background.
+                // Google Map
                 Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: scheme.surface.withValues(alpha: 0.10),
+                  child: GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: center,
+                      zoom: 11.0,
                     ),
-                    child: CustomPaint(
-                      painter: _MapGridPainter(
-                        line: scheme.onSurface.withValues(alpha: 0.05),
-                        glowA: scheme.primary.withValues(alpha: 0.08),
-                        glowB: scheme.secondary.withValues(alpha: 0.06),
-                      ),
-                    ),
+                    markers: markers,
+                    style: isDark ? _darkMapStyle : null,
+                    onMapCreated: (controller) {
+                      _mapController = controller;
+                    },
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
                   ),
                 ),
 
@@ -114,20 +352,80 @@ class _MapScreenState extends State<MapScreen> {
                         padding: EdgeInsets.zero,
                         child: TextField(
                           controller: _search,
-                          decoration: const InputDecoration(
-                            hintText: 'Search events',
-                            prefixIcon: Icon(Icons.search_rounded),
+                          focusNode: _searchFocus,
+                          decoration: InputDecoration(
+                            hintText: 'Search places or venues...',
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon:
+                                _search.text.isNotEmpty
+                                    ? IconButton(
+                                      icon: const Icon(Icons.close_rounded),
+                                      onPressed: () {
+                                        _search.clear();
+                                        setState(() {
+                                          _placePredictions = [];
+                                          _showPredictions = false;
+                                        });
+                                      },
+                                    )
+                                    : null,
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,
                             focusedBorder: InputBorder.none,
                             filled: false,
                           ),
+                          onChanged: _onSearchChanged,
                           onSubmitted: (_) {
-                            // No server-side map query for now; the UI is layout-focused.
-                            setState(() {});
+                            setState(() => _showPredictions = false);
                           },
                         ),
                       ),
+                      // Places Autocomplete Dropdown
+                      if (_showPredictions && _placePredictions.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 4),
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: GlassSurface(
+                            blurSigma: 20,
+                            borderRadius: BorderRadius.circular(AppRadii.lg),
+                            padding: EdgeInsets.zero,
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              itemCount: _placePredictions.length,
+                              itemBuilder: (context, i) {
+                                final prediction = _placePredictions[i];
+                                return ListTile(
+                                  dense: true,
+                                  leading: Icon(
+                                    Icons.location_on_outlined,
+                                    color: scheme.primary,
+                                    size: 20,
+                                  ),
+                                  title: Text(
+                                    prediction.mainText,
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  subtitle: Text(
+                                    prediction.secondaryText,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurface.withValues(
+                                        alpha: 0.6,
+                                      ),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  onTap: () => _selectPlace(prediction),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 10),
                       SizedBox(
                         height: 40,
@@ -150,57 +448,109 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                 ),
 
-                // Pins
-                for (final p in pins)
-                  _MapPin(
-                    seed: p.id.hashCode ^ p.title.hashCode,
-                    selected: identical(p, _selected),
-                    onTap: () => setState(() => _selected = p),
+                // My Location button
+                Positioned(
+                  right: AppSpacing.responsive(context),
+                  top: 180,
+                  child: GlassSurface(
+                    blurSigma: 18,
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                    padding: EdgeInsets.zero,
+                    child: IconButton(
+                      onPressed:
+                          _isLoadingLocation ? null : _goToCurrentLocation,
+                      icon:
+                          _isLoadingLocation
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                              : Icon(
+                                Icons.my_location_rounded,
+                                color: scheme.primary,
+                              ),
+                      tooltip: 'My Location',
+                    ),
                   ),
+                ),
 
-                // Bottom cards
+                // Bottom event cards
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      bottom: 120 + MediaQuery.of(context).padding.bottom,
-                    ),
-                    child: SizedBox(
-                      height: 160,
-                      child: ListView.separated(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.responsive(context),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Selected event card or horizontal list
+                      if (_selectedEvent != null) ...[
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: AppSpacing.responsive(context),
+                          ),
+                          child: _buildSelectedEventCard(context),
                         ),
-                        scrollDirection: Axis.horizontal,
-                        itemCount: min(events.length, 12),
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, i) {
-                          final e = events[i];
-                          return SizedBox(
-                            width: 280,
-                            child: Opacity(
-                              opacity: identical(e, _selected) ? 1 : 0.92,
-                              child: EventPosterCard(
-                                event: e,
-                                compact: true,
-                                onTap: () {
-                                  Navigator.pushNamed(
-                                    context,
-                                    '/eventDetail',
-                                    arguments: e,
-                                  );
-                                },
-                              ),
+                        const SizedBox(height: 12),
+                      ],
+                      // Horizontal scrolling list of nearby events
+                      Padding(
+                        padding: EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom + 80,
+                        ),
+                        child: SizedBox(
+                          height: 140,
+                          child: ListView.separated(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.responsive(context),
                             ),
-                          );
-                        },
+                            scrollDirection: Axis.horizontal,
+                            itemCount: events.length > 12 ? 12 : events.length,
+                            separatorBuilder:
+                                (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, i) {
+                              final e = events[i];
+                              final isSelected = _selectedEvent?.id == e.id;
+                              return SizedBox(
+                                width: 260,
+                                child: Opacity(
+                                  opacity: isSelected ? 1 : 0.85,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() => _selectedEvent = e);
+                                      _mapController?.animateCamera(
+                                        CameraUpdate.newLatLng(
+                                          LatLng(e.latitude!, e.longitude!),
+                                        ),
+                                      );
+                                    },
+                                    child: EventPosterCard(
+                                      event: e,
+                                      compact: true,
+                                      onTap: () {
+                                        Navigator.pushNamed(
+                                          context,
+                                          '/eventDetail',
+                                          arguments: e,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-                const FloatingBottomBar(),
+
+                // Loading indicator
+                if (discover.isLoading && events.isEmpty)
+                  const Center(child: CircularProgressIndicator()),
               ],
             );
           },
@@ -208,140 +558,194 @@ class _MapScreenState extends State<MapScreen> {
       ),
     );
   }
-}
 
-class _MapPin extends StatelessWidget {
-  const _MapPin({
-    required this.seed,
-    required this.selected,
-    required this.onTap,
-  });
+  Widget _buildSelectedEventCard(BuildContext context) {
+    final event = _selectedEvent!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
-  final int seed;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final rand = Random(seed);
-
-    // Deterministic pseudo-random positions that keep pins away from the top controls.
-    final dx = 0.12 + rand.nextDouble() * 0.76;
-    final dy = 0.22 + rand.nextDouble() * 0.52;
-
-    return Positioned.fill(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              Positioned(
-                left: constraints.maxWidth * dx,
-                top: constraints.maxHeight * dy,
-                child: GestureDetector(
-                  onTap: onTap,
-                  child: AnimatedContainer(
-                    duration: AppAnimations.fast,
-                    curve: AppAnimations.defaultCurve,
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color:
-                          selected
-                              ? scheme.secondary
-                              : scheme.onSurface.withValues(alpha: 0.12),
-                      border: Border.all(
-                        color:
-                            selected
-                                ? scheme.secondary
-                                : scheme.outline.withValues(alpha: 0.22),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: (selected ? scheme.secondary : scheme.primary)
-                              .withValues(alpha: 0.30),
-                          blurRadius: 18,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.place_rounded,
-                      size: selected ? 22 : 20,
-                      color:
-                          selected
-                              ? Colors.white
-                              : scheme.onSurface.withValues(alpha: 0.80),
-                    ),
+    return GlassSurface(
+      blurSigma: 20,
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          // Event image or placeholder
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            child:
+                event.imageUrl != null
+                    ? Image.network(
+                      event.imageUrl!,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      errorBuilder:
+                          (_, __, ___) => _buildImagePlaceholder(scheme),
+                    )
+                    : _buildImagePlaceholder(scheme),
+          ),
+          const SizedBox(width: 16),
+          // Event details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  event.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+                if (event.venueName != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 14,
+                        color: scheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          event.venueName!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: scheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Directions button
+          IconButton.filledTonal(
+            onPressed: () => _openDirections(event),
+            tooltip: 'Get Directions',
+            icon: const Icon(Icons.directions_rounded, size: 20),
+          ),
+          const SizedBox(width: 4),
+          // View button
+          IconButton.filled(
+            onPressed: () {
+              Navigator.pushNamed(context, '/eventDetail', arguments: event);
+            },
+            tooltip: 'View Event',
+            icon: const Icon(Icons.arrow_forward_rounded),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder(ColorScheme scheme) {
+    return Container(
+      width: 80,
+      height: 80,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+      ),
+      child: Icon(
+        Icons.event_rounded,
+        color: scheme.onSurface.withValues(alpha: 0.3),
       ),
     );
   }
 }
 
-class _MapGridPainter extends CustomPainter {
-  _MapGridPainter({
-    required this.line,
-    required this.glowA,
-    required this.glowB,
-  });
-
-  final Color line;
-  final Color glowA;
-  final Color glowB;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint =
-        Paint()
-          ..color = line
-          ..strokeWidth = 1;
-
-    // Subtle grid.
-    const step = 48.0;
-    for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-
-    // Soft color washes.
-    final a =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [glowA, Colors.transparent],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * 0.25, size.height * 0.35),
-              radius: size.width * 0.7,
-            ),
-          );
-    canvas.drawRect(Offset.zero & size, a);
-
-    final b =
-        Paint()
-          ..shader = RadialGradient(
-            colors: [glowB, Colors.transparent],
-          ).createShader(
-            Rect.fromCircle(
-              center: Offset(size.width * 0.75, size.height * 0.55),
-              radius: size.width * 0.7,
-            ),
-          );
-    canvas.drawRect(Offset.zero & size, b);
+/// Dark mode map style for Google Maps
+const String _darkMapStyle = '''
+[
+  {
+    "elementType": "geometry",
+    "stylers": [{"color": "#212121"}]
+  },
+  {
+    "elementType": "labels.icon",
+    "stylers": [{"visibility": "off"}]
+  },
+  {
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#757575"}]
+  },
+  {
+    "elementType": "labels.text.stroke",
+    "stylers": [{"color": "#212121"}]
+  },
+  {
+    "featureType": "administrative",
+    "elementType": "geometry",
+    "stylers": [{"color": "#757575"}]
+  },
+  {
+    "featureType": "poi",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#757575"}]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "geometry",
+    "stylers": [{"color": "#181818"}]
+  },
+  {
+    "featureType": "poi.park",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#616161"}]
+  },
+  {
+    "featureType": "road",
+    "elementType": "geometry.fill",
+    "stylers": [{"color": "#2c2c2c"}]
+  },
+  {
+    "featureType": "road",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#8a8a8a"}]
+  },
+  {
+    "featureType": "road.arterial",
+    "elementType": "geometry",
+    "stylers": [{"color": "#373737"}]
+  },
+  {
+    "featureType": "road.highway",
+    "elementType": "geometry",
+    "stylers": [{"color": "#3c3c3c"}]
+  },
+  {
+    "featureType": "road.highway.controlled_access",
+    "elementType": "geometry",
+    "stylers": [{"color": "#4e4e4e"}]
+  },
+  {
+    "featureType": "road.local",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#616161"}]
+  },
+  {
+    "featureType": "transit",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#757575"}]
+  },
+  {
+    "featureType": "water",
+    "elementType": "geometry",
+    "stylers": [{"color": "#000000"}]
+  },
+  {
+    "featureType": "water",
+    "elementType": "labels.text.fill",
+    "stylers": [{"color": "#3d3d3d"}]
   }
-
-  @override
-  bool shouldRepaint(covariant _MapGridPainter oldDelegate) {
-    return oldDelegate.line != line ||
-        oldDelegate.glowA != glowA ||
-        oldDelegate.glowB != glowB;
-  }
-}
+]
+''';

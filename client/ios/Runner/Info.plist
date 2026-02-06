@@ -74,6 +74,8 @@
 		<string>ca-app-pub-3940256099942544~1458002511</string>
 		<key>ITSAppUsesNonExemptEncryption</key>
 		<string>no</string>
+		<key>GMSApiKey</key>
+		<string>AIzaSyDi2u-wZqvEUNKUflPO0hPDENFZdqpHx-0</string>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
 			<string>mailto</string>
