@@ -509,6 +509,60 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
             const Spacer(),
 
+            // Save/Bookmark button
+            if (showGlass)
+              GlassSurface(
+                blurSigma: 16,
+                borderRadius: BorderRadius.circular(AppRadii.full),
+                padding: EdgeInsets.zero,
+                tintColor: Colors.black.withValues(alpha: 0.3),
+                borderColor: Colors.white.withValues(alpha: 0.2),
+                child: IconButton(
+                  onPressed: _isLoading ? null : _toggleSave,
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                          : Icon(
+                            _isSaved
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            color: _isSaved ? accentColor : Colors.white,
+                          ),
+                ),
+              )
+            else
+              Container(
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: _isLoading ? null : _toggleSave,
+                  icon:
+                      _isLoading
+                          ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                          : Icon(
+                            _isSaved
+                                ? Icons.bookmark_rounded
+                                : Icons.bookmark_border_rounded,
+                            color: _isSaved ? accentColor : scheme.onSurface,
+                          ),
+                ),
+              ),
+
+            const SizedBox(width: 12),
+
             // Share button - always visible with appropriate styling
             if (showGlass)
               GlassSurface(
@@ -829,43 +883,6 @@ class _EventDetailScreenState extends State<EventDetailScreen>
       right: AppSpacing.responsive(context),
       child: Row(
         children: [
-          // Save button
-          Expanded(
-            flex: 1,
-            child: GlassSurface(
-              blurSigma: 20,
-              borderRadius: BorderRadius.circular(AppRadii.xl),
-              padding: EdgeInsets.zero,
-              enableGlow: _isSaved,
-              glowColor: accentColor,
-              glowIntensity: 0.2,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: _isLoading ? null : _toggleSave,
-                  borderRadius: BorderRadius.circular(AppRadii.xl),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    child:
-                        _isLoading
-                            ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                            : Icon(
-                              _isSaved
-                                  ? Icons.bookmark_rounded
-                                  : Icons.bookmark_border_rounded,
-                              color: _isSaved ? accentColor : null,
-                              size: 26,
-                            ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
           // Get tickets / Primary action
           Expanded(
             flex: 3,
@@ -899,7 +916,9 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     child: Text(
                       (widget.event.ticketUrl ?? '').isNotEmpty
                           ? 'Get Tickets'
-                          : (_isSaved ? 'Saved to Calendar' : 'Save Event'),
+                          : (_isSaved
+                              ? 'Saved to Calendar'
+                              : 'Add to Calendar'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,

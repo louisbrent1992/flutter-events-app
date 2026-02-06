@@ -10,7 +10,7 @@ const BASE_URL = "https://api.seatgeek.com/2/events";
  * @param {string} params.city - City name
  * @returns {Promise<Array>} - List of mapped events
  */
-async function fetchSeatgeekEvents({ keyword, city }) {
+async function fetchSeatgeekEvents({ keyword, city, category }) {
     if (!SEATGEEK_CLIENT_ID) {
         console.warn("SEATGEEK_CLIENT_ID is not set. Skipping SeatGeek search.");
         return [];
@@ -24,6 +24,20 @@ async function fetchSeatgeekEvents({ keyword, city }) {
             sort: "score.desc", // SeatGeek's popularity score
             per_page: 20
         };
+
+        // Map broad categories to SeatGeek taxonomies
+        if (category) {
+            const catLower = category.toLowerCase();
+            if (catLower === 'sports') params['taxonomies.name'] = 'sports';
+            else if (catLower === 'concerts' || catLower === 'music') params['taxonomies.name'] = 'concert';
+            else if (catLower === 'theater') params['taxonomies.name'] = 'theater';
+            else if (catLower === 'comedy') params['taxonomies.name'] = 'comedy'; // or type=comedy
+            else if (catLower === 'family') params['taxonomies.name'] = 'family';
+            // For others, we can treat it as part of the query if not a strict taxonomy
+            else if (!keyword) {
+                params.q = category;
+            }
+        }
 
         // Filter out undefined or empty params
         Object.keys(params).forEach(key => {
@@ -78,6 +92,10 @@ function mapSeatgeekEvent(sgEvent) {
             parts.push("Check ticket availability for latest prices.");
         }
 
+        if (sgEvent.url) {
+            parts.push(`\n\nGet your tickets here: ${sgEvent.url}`);
+        }
+
         description = parts.join(" ");
     }
 
@@ -95,7 +113,10 @@ function mapSeatgeekEvent(sgEvent) {
         // Add coordinates from venue location
         latitude: venue.location?.lat || null,
         longitude: venue.location?.lon || null,
-        categories: [sgEvent.type].filter(Boolean),
+        categories: [
+            sgEvent.type,
+            ...(sgEvent.taxonomies || []).map(t => t.name)
+        ].filter(Boolean),
         imageUrl: imageUrl,
         externalUrl: sgEvent.url,
         ticketPrice: sgEvent.stats && sgEvent.stats.lowest_price ? `$${sgEvent.stats.lowest_price}` : null,

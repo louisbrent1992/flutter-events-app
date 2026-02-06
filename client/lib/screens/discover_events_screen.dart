@@ -32,48 +32,80 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
   final ScrollController _scrollController = ScrollController();
   Timer? _debounce;
   String _selectedCategory = 'All';
-  bool _showFilters = false;
+  int _layoutMode = 0; // 0: list, 1: grid (2 columns), 2: compact
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-  // Predefined category data with icons and colors
+  // Layout mode icons and labels
+  static const List<Map<String, dynamic>> _layoutModes = [
+    {'icon': Icons.view_list_rounded, 'label': 'Compact'},
+    {'icon': Icons.grid_view_rounded, 'label': 'Grid'},
+    {'icon': Icons.view_agenda_rounded, 'label': 'List'},
+  ];
+
+  // Category data matching SeatGeek API event types
   static const List<Map<String, dynamic>> _categoryData = [
     {'name': 'All', 'icon': Icons.grid_view_rounded, 'color': null},
-    {
-      'name': 'Music',
-      'icon': Icons.music_note_rounded,
-      'color': Color(0xFFFF2E93),
-    },
-    {
-      'name': 'Nightlife',
-      'icon': Icons.nightlife_rounded,
-      'color': Color(0xFF8B5CF6),
-    },
-    {'name': 'Art', 'icon': Icons.palette_rounded, 'color': Color(0xFF00FF88)},
-    {
-      'name': 'Food',
-      'icon': Icons.restaurant_rounded,
-      'color': Color(0xFFFF6B35),
-    },
     {
       'name': 'Sports',
       'icon': Icons.sports_basketball_rounded,
       'color': Color(0xFF00D4FF),
+      'keywords': [
+        'nfl',
+        'nba',
+        'mlb',
+        'nhl',
+        'ncaa',
+        'soccer',
+        'mls',
+        'sports',
+        'racing',
+        'boxing',
+        'mma',
+        'tennis',
+        'golf',
+      ],
     },
     {
-      'name': 'Tech',
-      'icon': Icons.computer_rounded,
-      'color': Color(0xFF00D4FF),
+      'name': 'Concerts',
+      'icon': Icons.music_note_rounded,
+      'color': Color(0xFFFF2E93),
+      'keywords': [
+        'concert',
+        'music',
+        'festival',
+        'rock',
+        'pop',
+        'hip_hop',
+        'country',
+        'jazz',
+        'classical',
+      ],
+    },
+    {
+      'name': 'Theater',
+      'icon': Icons.theater_comedy_rounded,
+      'color': Color(0xFF8B5CF6),
+      'keywords': [
+        'theater',
+        'broadway',
+        'musical',
+        'opera',
+        'ballet',
+        'dance',
+      ],
     },
     {
       'name': 'Comedy',
-      'icon': Icons.theater_comedy_rounded,
+      'icon': Icons.sentiment_very_satisfied_rounded,
       'color': Color(0xFFFFD700),
+      'keywords': ['comedy', 'stand_up', 'comedian'],
     },
     {
       'name': 'Family',
       'icon': Icons.family_restroom_rounded,
       'color': Color(0xFF00FF88),
+      'keywords': ['family', 'kids', 'circus', 'disney'],
     },
   ];
 
@@ -94,6 +126,23 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final provider = context.read<DiscoverProvider>();
+
+      // Sync local state if provider already has filters (e.g. from Home screen nav)
+      if (provider.category.isNotEmpty) {
+        // Find matching category or keep 'All' if custom
+        final match = _categoryData.firstWhere((c) {
+          final name = c['name'].toString().toLowerCase();
+          final keywords = (c['keywords'] as List<String>?) ?? [];
+          final target = provider.category.toLowerCase();
+          return name == target || keywords.any((k) => target.contains(k));
+        }, orElse: () => {'name': 'All'});
+        setState(() {
+          _selectedCategory =
+              match['name'] as String? ?? 'All'; // Avoid cast error
+          _searchController.text = provider.query;
+        });
+      }
+
       if (provider.events.isEmpty && !provider.isLoading) {
         provider.load(page: 1, limit: 20);
       }
@@ -159,14 +208,18 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
         centerTitle: false,
         automaticallyImplyLeading: true,
         actions: [
-          // Filter toggle
+          // Layout toggle (show next layout)
           IconButton(
+            tooltip:
+                'Switch to ${_layoutModes[(_layoutMode + 1) % _layoutModes.length]['label']}',
             icon: Icon(
-              _showFilters
-                  ? Icons.filter_list_off_rounded
-                  : Icons.filter_list_rounded,
+              _layoutModes[(_layoutMode + 1) % _layoutModes.length]['icon']
+                  as IconData,
             ),
-            onPressed: () => setState(() => _showFilters = !_showFilters),
+            onPressed:
+                () => setState(() {
+                  _layoutMode = (_layoutMode + 1) % _layoutModes.length;
+                }),
           ),
         ],
       ),
@@ -395,34 +448,7 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
                             );
                           },
                           color: scheme.primary,
-                          child: ListView.separated(
-                            controller: _scrollController,
-                            padding: EdgeInsets.only(
-                              left: AppSpacing.responsive(context),
-                              right: AppSpacing.responsive(context),
-                              bottom: 140,
-                            ),
-                            itemCount:
-                                provider.events.length +
-                                (provider.isLoading ? 1 : 0),
-                            separatorBuilder:
-                                (_, __) => const SizedBox(height: 14),
-                            itemBuilder: (context, i) {
-                              if (i >= provider.events.length) {
-                                return const Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              final event = provider.events[i];
-                              return _buildEventCard(context, event, index: i);
-                            },
-                          ),
+                          child: _buildEventsList(context, provider),
                         );
                       },
                     ),
@@ -437,11 +463,100 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
     );
   }
 
-  Widget _buildEventCard(BuildContext context, Event event, {int index = 0}) {
+  Widget _buildEventsList(BuildContext context, DiscoverProvider provider) {
+    // 0: List (Full cards)
+    if (_layoutMode == 0) {
+      return ListView.separated(
+        controller: _scrollController,
+        padding: EdgeInsets.only(
+          left: AppSpacing.responsive(context),
+          right: AppSpacing.responsive(context),
+          bottom: 140,
+        ),
+        itemCount: provider.events.length + (provider.isLoading ? 1 : 0),
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        itemBuilder: (context, i) {
+          if (i >= provider.events.length) return _buildLoadingSpinner();
+          final event = provider.events[i];
+          return _buildEventCard(context, event, compact: false);
+        },
+      );
+    }
+
+    // 1: Grid (2 columns)
+    if (_layoutMode == 1) {
+      return GridView.builder(
+        controller: _scrollController,
+        padding: EdgeInsets.only(
+          left: AppSpacing.responsive(context),
+          right: AppSpacing.responsive(context),
+          bottom: 140,
+        ),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: provider.events.length + (provider.isLoading ? 1 : 0),
+        itemBuilder: (context, i) {
+          if (i >= provider.events.length) return _buildLoadingSpinner();
+          final event = provider.events[i];
+          // Use compact card logic but forced into grid aspect ratio
+          return LayoutBuilder(
+            builder: (ctx, constraints) {
+              return EventPosterCard(
+                event: event,
+                compact: true, // Hides description/some details
+                onTap:
+                    () => Navigator.pushNamed(
+                      context,
+                      '/eventDetail',
+                      arguments: event,
+                    ),
+              );
+            },
+          );
+        },
+      );
+    }
+
+    // 2: Compact List (Small rows)
+    return ListView.separated(
+      controller: _scrollController,
+      padding: EdgeInsets.only(
+        left: AppSpacing.responsive(context),
+        right: AppSpacing.responsive(context),
+        bottom: 140,
+      ),
+      itemCount: provider.events.length + (provider.isLoading ? 1 : 0),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, i) {
+        if (i >= provider.events.length) return _buildLoadingSpinner();
+        final event = provider.events[i];
+        // Use horizontal layout for compact list to differentiate from main list
+        return _buildEventCard(context, event, compact: true, horizontal: true);
+      },
+    );
+  }
+
+  Widget _buildLoadingSpinner() {
+    return const Padding(
+      padding: EdgeInsets.all(16),
+      child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    );
+  }
+
+  Widget _buildEventCard(
+    BuildContext context,
+    Event event, {
+    bool compact = false,
+    bool horizontal = false,
+  }) {
     return EventPosterCard(
       event: event,
-      compact: false, // Show large tiles by default
-
+      compact: compact,
+      horizontal: horizontal,
       trailing: GlassSurface(
         blurSigma: 14,
         borderRadius: BorderRadius.circular(AppRadii.full),

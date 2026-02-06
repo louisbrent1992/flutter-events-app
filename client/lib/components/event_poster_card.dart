@@ -19,6 +19,7 @@ class EventPosterCard extends StatefulWidget {
     this.onTap,
     this.trailing,
     this.compact = false,
+    this.horizontal = false,
     this.showShadow = true,
     this.accentColor,
   });
@@ -27,6 +28,7 @@ class EventPosterCard extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget? trailing;
   final bool compact;
+  final bool horizontal;
   final bool showShadow;
   final Color? accentColor;
 
@@ -36,9 +38,11 @@ class EventPosterCard extends StatefulWidget {
 
 class _EventPosterCardState extends State<EventPosterCard>
     with SingleTickerProviderStateMixin {
+  // ... existing state methods ...
   bool _isPressed = false;
 
   String _subtitle(Event e) {
+    // ...
     final parts = <String>[];
     if (e.startAt != null) {
       parts.add(_formatDate(e.startAt!));
@@ -49,6 +53,7 @@ class _EventPosterCardState extends State<EventPosterCard>
   }
 
   String _formatDate(DateTime dt) {
+    // ...
     final months = [
       'Jan',
       'Feb',
@@ -68,6 +73,7 @@ class _EventPosterCardState extends State<EventPosterCard>
   }
 
   Color _getCategoryColor(String category) {
+    // ...
     final c = category.toLowerCase();
     if (c.contains('music') || c.contains('concert'))
       return AppPalette.primaryBlue;
@@ -94,7 +100,9 @@ class _EventPosterCardState extends State<EventPosterCard>
             : scheme.primary);
 
     final radius = BorderRadius.circular(AppRadii.xl);
-    final height = widget.compact ? 100.0 : 220.0;
+
+    // Choose height based on layout mode
+    final height = widget.horizontal ? 110.0 : (widget.compact ? 200.0 : 250.0);
 
     Widget imageLayer;
     if (hasImage) {
@@ -161,49 +169,55 @@ class _EventPosterCardState extends State<EventPosterCard>
                           Colors.black.withValues(alpha: 0.5),
                           Colors.black.withValues(alpha: 0.85),
                         ],
-                        stops:
-                            widget.compact
-                                ? const [0.0, 0.3, 0.6, 1.0]
-                                : const [0.0, 0.4, 0.65, 1.0],
+                        stops: const [0.0, 0.4, 0.65, 1.0],
                       ),
                     ),
                   ),
 
-                  // Accent glow at top
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: 60,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            accentColor.withValues(alpha: 0.2),
-                            Colors.transparent,
-                          ],
+                  // Accent glow at top (hidden in horizontal mode to reduce noise)
+                  if (!widget.horizontal)
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: 60,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              accentColor.withValues(alpha: 0.2),
+                              Colors.transparent,
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
                   // Content
                   Padding(
-                    padding: EdgeInsets.all(widget.compact ? 12 : 16),
+                    padding: EdgeInsets.all(
+                      widget.horizontal ? 12 : (widget.compact ? 12 : 16),
+                    ),
                     child:
-                        widget.compact
-                            ? _buildCompactContent(
+                        widget.horizontal
+                            ? _buildHorizontalContent(
                               context,
                               subtitle,
                               accentColor,
                             )
-                            : _buildExpandedContent(
-                              context,
-                              subtitle,
-                              accentColor,
-                            ),
+                            : (widget.compact
+                                ? _buildCompactContent(
+                                  context,
+                                  subtitle,
+                                  accentColor,
+                                )
+                                : _buildExpandedContent(
+                                  context,
+                                  subtitle,
+                                  accentColor,
+                                )),
                   ),
                 ],
               ),
@@ -211,6 +225,116 @@ class _EventPosterCardState extends State<EventPosterCard>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHorizontalContent(
+    BuildContext context,
+    String subtitle,
+    Color accentColor,
+  ) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        // Date Badge
+        if (widget.event.startAt != null)
+          Container(
+            width: 50,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(AppRadii.md),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _getMonthAbbr(widget.event.startAt!),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: accentColor,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                  ),
+                ),
+                Text(
+                  '${widget.event.startAt!.day}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+        const SizedBox(width: 16),
+
+        // Text Content
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (widget.event.categories.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    widget.event.categories.first.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: accentColor,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              Text(
+                widget.event.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  height: 1.2,
+                ),
+              ),
+              if (subtitle.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 12,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          widget.event.venueName ?? widget.event.city ?? '',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.65),
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        if (widget.trailing != null) ...[
+          const SizedBox(width: 12),
+          widget.trailing!,
+        ],
+      ],
     );
   }
 
@@ -245,103 +369,107 @@ class _EventPosterCardState extends State<EventPosterCard>
   ) {
     final theme = Theme.of(context);
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Date badge for compact
-        if (widget.event.startAt != null)
-          Container(
-            width: 52,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            margin: const EdgeInsets.only(right: 14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadii.md),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  _getMonthAbbr(widget.event.startAt!),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Date badge for compact
+            if (widget.event.startAt != null)
+              Container(
+                width: 52,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadii.md),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _getMonthAbbr(widget.event.startAt!),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: accentColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 10,
+                      ),
+                    ),
+                    Text(
+                      '${widget.event.startAt!.day}',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (widget.trailing != null) widget.trailing!,
+          ],
+        ),
+        const Spacer(),
+        // Event info
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.event.categories.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  widget.event.categories.first.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: accentColor,
                     fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
                     fontSize: 10,
                   ),
                 ),
-                Text(
-                  '${widget.event.startAt!.day}',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        // Event info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (widget.event.categories.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(
-                    widget.event.categories.first.toUpperCase(),
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: accentColor,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              Text(
-                widget.event.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
               ),
-              if (subtitle.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_rounded,
-                        size: 12,
-                        color: Colors.white.withValues(alpha: 0.6),
-                      ),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          widget.event.venueName ?? widget.event.city ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.65),
-                            fontSize: 11,
-                          ),
+            Text(
+              widget.event.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                height: 1.2,
+              ),
+            ),
+            if (subtitle.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 12,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        widget.event.venueName ?? widget.event.city ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 11,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
-        if (widget.trailing != null) ...[
-          const SizedBox(width: 10),
-          widget.trailing!,
-        ],
       ],
     );
   }

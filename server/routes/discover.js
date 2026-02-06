@@ -85,7 +85,8 @@ router.get("/discover", async (req, res) => {
     // 2. Fetch external events from SeatGeek
     const sgEvents = await fetchSeatgeekEvents({
       keyword: q,
-      city: city
+      city: city,
+      category: category
 
 
     });

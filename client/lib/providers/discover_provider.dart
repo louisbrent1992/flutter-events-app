@@ -6,7 +6,10 @@ import '../services/local_storage_service.dart';
 
 class DiscoverProvider extends ChangeNotifier {
   List<Event> _events = [];
+  List<Event> _homeEvents =
+      []; // Separate list for Home screen to ignore filters
   bool _isLoading = false;
+  bool _isHomeLoading = false;
   ApiResponse<Event>? _error;
 
   int _currentPage = 1;
@@ -24,7 +27,9 @@ class DiscoverProvider extends ChangeNotifier {
   DateTime? _to;
 
   List<Event> get events => _events;
+  List<Event> get homeEvents => _homeEvents;
   bool get isLoading => _isLoading;
+  bool get isHomeLoading => _isHomeLoading;
   ApiResponse<Event>? get error => _error;
 
   int get currentPage => _currentPage;
@@ -158,6 +163,31 @@ class DiscoverProvider extends ChangeNotifier {
       _setError(e.toString());
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<void> loadHomeEvents() async {
+    if (_isHomeLoading) return;
+
+    _isHomeLoading = true;
+    notifyListeners();
+
+    try {
+      // Fetch general trending/upcoming events (no filters applied)
+      final resp = await DiscoverService.getDiscoverEvents(
+        limit: 10,
+        // Ensure no filters are passed
+      );
+
+      if (resp.success && resp.data != null) {
+        final events = resp.data!['events'] as List<Event>? ?? <Event>[];
+        _homeEvents = events;
+      }
+    } catch (e) {
+      debugPrint('Error loading home events: $e');
+    } finally {
+      _isHomeLoading = false;
+      notifyListeners();
     }
   }
 }

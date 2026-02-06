@@ -46,6 +46,10 @@ class _MapScreenState extends State<MapScreen> {
     'Concerts',
     'Theater',
     'Comedy',
+    'Family',
+    'Nightlife',
+    'Tech',
+    'Arts',
   ];
   String _chip = 'All';
 
@@ -193,64 +197,75 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Filter events by category chip
-  bool _matchesChip(Event e) {
-    if (_chip == 'All') return true;
-    final categories = e.categories.map((c) => c.toLowerCase()).toList();
+  void _onChipSelected(String label) {
+    if (_chip == label) return;
+    setState(() {
+      _chip = label;
+      _selectedEvent = null; // Clear selection when filter changes
+    });
 
-    switch (_chip) {
-      case 'Sports':
-        return categories.any(
-          (c) =>
-              c.contains('nfl') ||
-              c.contains('nba') ||
-              c.contains('mlb') ||
-              c.contains('nhl') ||
-              c.contains('ncaa') ||
-              c.contains('soccer') ||
-              c.contains('mls') ||
-              c.contains('sports') ||
-              c.contains('racing') ||
-              c.contains('motocross') ||
-              c.contains('boxing') ||
-              c.contains('mma') ||
-              c.contains('wrestling') ||
-              c.contains('tennis') ||
-              c.contains('golf'),
-        );
-      case 'Concerts':
-        return categories.any(
-          (c) =>
-              c.contains('concert') ||
-              c.contains('music') ||
-              c.contains('festival') ||
-              c.contains('rock') ||
-              c.contains('pop') ||
-              c.contains('hip_hop') ||
-              c.contains('country') ||
-              c.contains('jazz') ||
-              c.contains('classical'),
-        );
-      case 'Theater':
-        return categories.any(
-          (c) =>
-              c.contains('theater') ||
-              c.contains('broadway') ||
-              c.contains('musical') ||
-              c.contains('opera') ||
-              c.contains('ballet') ||
-              c.contains('dance'),
-        );
-      case 'Comedy':
-        return categories.any(
-          (c) =>
-              c.contains('comedy') ||
-              c.contains('stand_up') ||
-              c.contains('comedian'),
-        );
-      default:
-        return true;
+    // Trigger a load for the new category to get full results from server
+    final discover = context.read<DiscoverProvider>();
+    discover.setFilters(category: label == 'All' ? '' : label);
+    discover.load(page: 1, limit: 30, forceRefresh: true);
+  }
+
+  /// Filter events by category chip (in-memory secondary filter)
+  bool _matchesChip(Event e) {
+    if (_chip == 'All' || _chip.isEmpty) return true;
+    final categories = e.categories.map((c) => c.toLowerCase()).toList();
+    final target = _chip.toLowerCase();
+
+    // Check direct name match or keywords (consistent with Discover screen logic)
+    if (categories.contains(target)) return true;
+
+    // Taxonomy specific mappings
+    if (target == 'sports') {
+      return categories.any(
+        (c) =>
+            c.contains('sports') ||
+            c.contains('nfl') ||
+            c.contains('nba') ||
+            c.contains('soccer') ||
+            c.contains('mlb') ||
+            c.contains('nhl'),
+      );
     }
+    if (target == 'concerts' || target == 'music') {
+      return categories.any(
+        (c) =>
+            c.contains('concert') ||
+            c.contains('music') ||
+            c.contains('festival') ||
+            c.contains('rock') ||
+            c.contains('pop') ||
+            c.contains('hip_hop') ||
+            c.contains('country') ||
+            c.contains('jazz') ||
+            c.contains('classical'),
+      );
+    }
+    if (target == 'theater') {
+      return categories.any(
+        (c) =>
+            c.contains('theater') ||
+            c.contains('broadway') ||
+            c.contains('musical') ||
+            c.contains('opera') ||
+            c.contains('ballet') ||
+            c.contains('dance'),
+      );
+    }
+    if (target == 'comedy') {
+      return categories.any(
+        (c) => c.contains('comedy') || c.contains('comedian'),
+      );
+    }
+    if (target == 'family') {
+      return categories.any((c) => c.contains('family') || c.contains('kids'));
+    }
+
+    return categories.any((c) => c.contains(target));
   }
 
   /// Filter events that have valid coordinates
@@ -439,7 +454,7 @@ class _MapScreenState extends State<MapScreen> {
                             return PillChip(
                               label: label,
                               selected: _chip == label && label != 'All',
-                              onTap: () => setState(() => _chip = label),
+                              onTap: () => _onChipSelected(label),
                             );
                           },
                         ),
@@ -501,7 +516,7 @@ class _MapScreenState extends State<MapScreen> {
                           bottom: MediaQuery.of(context).padding.bottom + 80,
                         ),
                         child: SizedBox(
-                          height: 140,
+                          height: 200,
                           child: ListView.separated(
                             padding: EdgeInsets.symmetric(
                               horizontal: AppSpacing.responsive(context),

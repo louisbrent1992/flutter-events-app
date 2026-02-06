@@ -59,6 +59,9 @@ class _HomeScreenState extends State<HomeScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final discover = context.read<DiscoverProvider>();
+      if (!discover.isHomeLoading && discover.homeEvents.isEmpty) {
+        discover.loadHomeEvents();
+      }
       if (!discover.isLoading && discover.events.isEmpty) {
         discover.load(page: 1, limit: 16);
       }
@@ -72,17 +75,16 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
-  List<String> _categoryChips(List<Event> events) {
-    final set = <String>{};
-    for (final e in events) {
-      for (final c in e.categories) {
-        final cleaned = c.trim();
-        if (cleaned.isNotEmpty) set.add(cleaned);
-      }
-    }
-    final list = set.toList()..sort();
-    return ['All', ...list.take(8)];
-  }
+  List<String> get _curatedCategories => [
+    'All',
+    'Sports',
+    'Concerts',
+    'Theater',
+    'Comedy',
+    'Family',
+    'Nightlife',
+    'Tech',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen>
     final isDark = theme.brightness == Brightness.dark;
     final isAuthed = context.watch<AuthService>().user != null;
     final discover = context.watch<DiscoverProvider>();
-    final categories = _categoryChips(discover.events);
+    final categories = _curatedCategories;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -203,9 +205,10 @@ class _HomeScreenState extends State<HomeScreen>
                           onViewAll: () => _go(context, '/discover'),
                         ),
                         const SizedBox(height: 14),
-                        if (discover.isLoading && discover.events.isEmpty)
+                        if (discover.isHomeLoading &&
+                            discover.homeEvents.isEmpty)
                           _buildLoadingCards(context)
-                        else if (discover.events.isEmpty)
+                        else if (discover.homeEvents.isEmpty)
                           _buildEmptyState(context)
                         else
                           SizedBox(
@@ -215,11 +218,11 @@ class _HomeScreenState extends State<HomeScreen>
                               padding: EdgeInsets.symmetric(
                                 horizontal: AppSpacing.responsive(context),
                               ),
-                              itemCount: discover.events.take(6).length,
+                              itemCount: discover.homeEvents.take(6).length,
                               separatorBuilder:
                                   (_, __) => const SizedBox(width: 14),
                               itemBuilder: (context, i) {
-                                final e = discover.events[i];
+                                final e = discover.homeEvents[i];
                                 return _buildFeaturedCard(context, e, index: i);
                               },
                             ),
@@ -250,8 +253,8 @@ class _HomeScreenState extends State<HomeScreen>
                           onViewAll: () => _go(context, '/discover'),
                         ),
                         const SizedBox(height: 14),
-                        if (discover.events.length > 6)
-                          ...discover.events
+                        if (discover.homeEvents.length > 6)
+                          ...discover.homeEvents
                               .skip(6)
                               .take(4)
                               .map(
