@@ -173,10 +173,12 @@ class DiscoverProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Fetch general trending/upcoming events (no filters applied)
+      // Fetch general trending/upcoming events
+      // We pass a generic category or query to ensure external APIs (SeatGeek) return data
+      // even if our internal database is empty.
       final resp = await DiscoverService.getDiscoverEvents(
         limit: 10,
-        // Ensure no filters are passed
+        query: 'events', // Generic query to trigger broad search
       );
 
       if (resp.success && resp.data != null) {
