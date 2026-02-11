@@ -68,6 +68,8 @@ const placesRoutes = require("./routes/places");
 
 // Import cron jobs
 const { initPlacesCacheCron } = require("./utils/placesCacheCron");
+const { initSerpApiCron } = require("./utils/serpApiCron");
+
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -150,4 +152,5 @@ app.listen(port, () => {
 
 	// Initialize cron jobs
 	initPlacesCacheCron();
+	initSerpApiCron();
 });
