@@ -764,7 +764,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final crossAxisCount =
-                                  constraints.maxWidth < 360 ? 1 : 2;
+                                  constraints.maxWidth < 300 ? 1 : 2;
                               final tiles = <Widget>[
                                 OutlinedButton.icon(
                                   onPressed:

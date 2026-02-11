@@ -29,6 +29,7 @@ import 'package:eventease/providers/collection_provider.dart';
 import 'package:eventease/screens/create_event_screen.dart';
 import 'package:eventease/screens/event_detail_screen.dart';
 import 'package:eventease/screens/import_event_screen.dart';
+import 'package:eventease/screens/import_calendar_screen.dart';
 import 'package:eventease/screens/ai_planner_screen.dart';
 import 'package:eventease/screens/discover_events_screen.dart';
 import 'package:eventease/screens/event_collections_screen.dart';
@@ -638,6 +639,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         (args) => PersistentBannerLayout(
           child: ImportEventScreen(sharedUrl: args as String?),
         ),
+    '/importCalendar':
+        (args) => const PersistentBannerLayout(child: ImportCalendarScreen()),
     '/planner':
         (args) => const PersistentBannerLayout(child: AiPlannerScreen()),
     '/splash': (args) => const SplashScreen(),

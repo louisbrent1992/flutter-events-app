@@ -152,7 +152,9 @@ class _ImportEventScreenState extends State<ImportEventScreen>
       if (result == null || result.files.isEmpty) return;
 
       final file = result.files.first;
-      final bytes = file.bytes ?? (file.path != null ? await File(file.path!).readAsBytes() : null);
+      final bytes =
+          file.bytes ??
+          (file.path != null ? await File(file.path!).readAsBytes() : null);
       if (!context.mounted) return;
       if (bytes == null) {
         SnackBarHelper.showError(context, 'Unable to read image');
@@ -185,15 +187,16 @@ class _ImportEventScreenState extends State<ImportEventScreen>
     }
   }
 
-  Future<void> _saveDraftAsEvent(Event draft, BuildContext context, {required bool fromAi}) async {
+  Future<void> _saveDraftAsEvent(
+    Event draft,
+    BuildContext context, {
+    required bool fromAi,
+  }) async {
     final provider = context.read<EventProvider>();
     final subscriptionProvider = context.read<SubscriptionProvider>();
 
     final created = await provider.createEvent(
-      draft.copyWith(
-        id: '',
-        userId: '',
-      ),
+      draft.copyWith(id: '', userId: ''),
       context,
     );
 
@@ -210,7 +213,11 @@ class _ImportEventScreenState extends State<ImportEventScreen>
 
       if (!context.mounted) return;
       SnackBarHelper.showSuccess(context, 'Event saved');
-      Navigator.pushReplacementNamed(context, '/eventDetail', arguments: created);
+      Navigator.pushReplacementNamed(
+        context,
+        '/eventDetail',
+        arguments: created,
+      );
     } else {
       SnackBarHelper.showError(
         context,
@@ -296,6 +303,13 @@ class _ImportEventScreenState extends State<ImportEventScreen>
                   icon: const Icon(Icons.camera_alt_rounded),
                   label: const Text('Scan flyer / screenshot'),
                 ),
+                SizedBox(height: AppSpacing.md),
+                OutlinedButton.icon(
+                  onPressed:
+                      () => Navigator.pushNamed(context, '/importCalendar'),
+                  icon: const Icon(Icons.calendar_month_rounded),
+                  label: const Text('Import from Calendar'),
+                ),
               ],
             ),
           ),
@@ -304,5 +318,3 @@ class _ImportEventScreenState extends State<ImportEventScreen>
     );
   }
 }
-
-

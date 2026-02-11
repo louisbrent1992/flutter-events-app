@@ -128,23 +128,13 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textTheme = Theme.of(context).textTheme;
 
-    // Mode-specific adjustments for better contrast
-    final backdropGlowColor =
+    // Soft glow color behind the logo
+    final logoGlowColor =
         isDark
-            ? Colors.white.withValues(alpha: 0.25) // Brighter in dark mode
-            : Colors.black.withValues(alpha: 0.15); // Darker in light mode
-
-    final backdropCircleColor =
-        isDark
-            ? Colors.white.withValues(
-              alpha: 0.12,
-            ) // Lighter backdrop in dark mode
-            : Colors.white.withValues(alpha: 0.08); // Subtle in light mode
-
-    final primaryGlowIntensity =
-        isDark ? 0.30 : 0.20; // Stronger glow in dark mode
-    final primaryGlowBlur = isDark ? 40.0 : 30.0; // Larger glow in dark mode
+            ? scheme.primary.withValues(alpha: 0.25)
+            : scheme.primary.withValues(alpha: 0.12);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -153,85 +143,83 @@ class _SplashScreenState extends State<SplashScreen>
           opacity: _fade,
           child: ScaleTransition(
             scale: _scale,
-            child: Stack(
-              alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Outer backdrop glow - stronger in dark mode
+                const Spacer(flex: 3),
+
+                // Logo with subtle warm glow
                 Container(
-                  width: 400,
-                  height: 400,
+                  width: 140,
+                  height: 140,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: backdropGlowColor,
-                        blurRadius: isDark ? 100 : 80,
-                        spreadRadius: isDark ? 40 : 30,
+                        color: logoGlowColor,
+                        blurRadius: isDark ? 60 : 40,
+                        spreadRadius: isDark ? 15 : 10,
                       ),
-                      BoxShadow(
-                        color: scheme.primary.withValues(
-                          alpha: isDark ? 0.15 : 0.08,
-                        ),
-                        blurRadius: isDark ? 120 : 100,
-                        spreadRadius: isDark ? 50 : 40,
-                      ),
-                    ],
-                  ),
-                ),
-                // Backdrop circle - more visible in dark mode
-                Container(
-                  width: 360,
-                  height: 360,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: backdropCircleColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: backdropGlowColor,
-                        blurRadius: isDark ? 60 : 50,
-                        spreadRadius: isDark ? 20 : 15,
-                      ),
-                    ],
-                  ),
-                ),
-                // Logo with mode-appropriate outer glow
-                Container(
-                  width: 340,
-                  height: 340,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      // Primary color glow - stronger in dark mode
-                      BoxShadow(
-                        color: scheme.primary.withValues(
-                          alpha: primaryGlowIntensity,
-                        ),
-                        blurRadius: primaryGlowBlur,
-                        spreadRadius: isDark ? 8 : 5,
-                      ),
-                      // Secondary glow for depth
-                      BoxShadow(
-                        color: (isDark ? Colors.white : Colors.black)
-                            .withValues(alpha: isDark ? 0.15 : 0.10),
-                        blurRadius: isDark ? 25 : 20,
-                        spreadRadius: isDark ? 4 : 2,
-                      ),
-                      // Subtle inner glow in dark mode
-                      if (isDark)
-                        BoxShadow(
-                          color: scheme.secondary.withValues(alpha: 0.12),
-                          blurRadius: 20,
-                          spreadRadius: 2,
-                        ),
                     ],
                   ),
                   child: Image(
                     image: _logo,
-                    width: 340,
+                    width: 140,
+                    height: 140,
                     filterQuality: FilterQuality.high,
                     fit: BoxFit.contain,
                   ),
                 ),
+
+                const SizedBox(height: 32),
+
+                // App name
+                Text(
+                  'EventEase',
+                  style: textTheme.headlineLarge?.copyWith(
+                    color: scheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Subtitle
+                Text(
+                  'Your Personal Event Assistant',
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.55),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+
+                const Spacer(flex: 2),
+
+                // Loading spinner
+                SizedBox(
+                  width: 28,
+                  height: 28,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      scheme.primary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Loading text
+                Text(
+                  'Loading...',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.4),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+
+                const Spacer(flex: 1),
               ],
             ),
           ),

@@ -8,9 +8,24 @@ import 'package:google_fonts/google_fonts.dart';
 /// Deep blues, slate grays, and subtle warm accents
 class AppPalette {
   // Core brand colors - Professional & Refined
-  static const Color primaryBlue = Color(0xFF1E40AF); // Deep corporate blue
-  static const Color accentBlue = Color(0xFF3B82F6); // Bright accent blue
-  static const Color slate = Color(0xFF475569); // Professional gray
+  static const Color primaryBlue = Color.fromARGB(
+    255,
+    30,
+    64,
+    175,
+  ); // Deep corporate blue
+  static const Color accentBlue = Color.fromARGB(
+    255,
+    59,
+    130,
+    246,
+  ); // Bright accent blue
+  static const Color slate = Color.fromARGB(
+    255,
+    71,
+    85,
+    105,
+  ); // Professional gray
   static const Color emerald = Color(0xFF059669); // Success green
   static const Color amber = Color(0xFFD97706); // Warm accent
   static const Color warmGray = Color(0xFF78716C); // Neutral warm

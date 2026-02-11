@@ -75,15 +75,18 @@ class _EventPosterCardState extends State<EventPosterCard>
   Color _getCategoryColor(String category) {
     // ...
     final c = category.toLowerCase();
-    if (c.contains('music') || c.contains('concert'))
+    if (c.contains('music') || c.contains('concert')) {
       return AppPalette.primaryBlue;
+    }
     if (c.contains('night') || c.contains('party')) return AppPalette.slate;
     if (c.contains('art') || c.contains('gallery')) return AppPalette.emerald;
-    if (c.contains('tech') || c.contains('startup'))
+    if (c.contains('tech') || c.contains('startup')) {
       return AppPalette.accentBlue;
+    }
     if (c.contains('sport') || c.contains('fitness')) return AppPalette.amber;
-    if (c.contains('food') || c.contains('culinary'))
+    if (c.contains('food') || c.contains('culinary')) {
       return AppPalette.warmGray;
+    }
     return AppPalette.accentBlue;
   }
 

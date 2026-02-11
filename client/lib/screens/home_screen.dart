@@ -675,22 +675,30 @@ class _HomeScreenState extends State<HomeScreen>
     // Category icons mapping
     IconData getIcon(String cat) {
       final c = cat.toLowerCase();
-      if (c.contains('music') || c.contains('concert'))
+      if (c.contains('music') || c.contains('concert')) {
         return Icons.music_note_rounded;
-      if (c.contains('night') || c.contains('party'))
+      }
+      if (c.contains('night') || c.contains('party')) {
         return Icons.nightlife_rounded;
-      if (c.contains('art') || c.contains('gallery'))
+      }
+      if (c.contains('art') || c.contains('gallery')) {
         return Icons.palette_rounded;
-      if (c.contains('tech') || c.contains('startup'))
+      }
+      if (c.contains('tech') || c.contains('startup')) {
         return Icons.computer_rounded;
-      if (c.contains('sport') || c.contains('fitness'))
+      }
+      if (c.contains('sport') || c.contains('fitness')) {
         return Icons.sports_basketball_rounded;
-      if (c.contains('food') || c.contains('culinary'))
+      }
+      if (c.contains('food') || c.contains('culinary')) {
         return Icons.restaurant_rounded;
-      if (c.contains('theater') || c.contains('comedy'))
+      }
+      if (c.contains('theater') || c.contains('comedy')) {
         return Icons.theater_comedy_rounded;
-      if (c.contains('family') || c.contains('kids'))
+      }
+      if (c.contains('family') || c.contains('kids')) {
         return Icons.family_restroom_rounded;
+      }
       if (c == 'all') return Icons.grid_view_rounded;
       return Icons.local_activity_rounded;
     }

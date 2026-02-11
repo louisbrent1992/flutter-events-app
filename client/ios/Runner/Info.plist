@@ -126,6 +126,10 @@
 		</dict>
 		<key>NSMicrophoneUsageDescription</key>
 		<string></string>
+		<key>NSCalendarsUsageDescription</key>
+		<string>EventEase would like to access your calendar to import and sync your existing events.</string>
+		<key>NSCalendarsFullAccessUsageDescription</key>
+		<string>EventEase would like to access your calendar to import and sync your existing events.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>EventEase needs access to your photos so you can upload flyers and create events.</string>
 		<key>NSUserActivityTypes</key>
