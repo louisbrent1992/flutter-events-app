@@ -126,6 +126,10 @@
 		</dict>
 		<key>NSMicrophoneUsageDescription</key>
 		<string></string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>EventEase needs your location to show events near you and provide directions, even when the app is in the background.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>EventEase needs your location to show events near you and provide directions.</string>
 		<key>NSCalendarsUsageDescription</key>
 		<string>EventEase would like to access your calendar to import and sync your existing events.</string>
 		<key>NSCalendarsFullAccessUsageDescription</key>
