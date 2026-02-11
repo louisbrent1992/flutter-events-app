@@ -154,8 +154,9 @@ class _MyEventsScreenState extends State<MyEventsScreen>
                           onRefresh: () async {
                             HapticFeedback.mediumImpact();
                             await provider.loadUserEvents(forceRefresh: true);
-                            if (mounted)
+                            if (mounted) {
                               SnackBarHelper.showSuccess(context, 'Refreshed');
+                            }
                           },
                           child: CustomScrollView(
                             slivers: [
