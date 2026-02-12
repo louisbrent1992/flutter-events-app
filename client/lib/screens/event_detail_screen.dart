@@ -1028,10 +1028,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     }
 
     final keywords = [
-      'Event details',
       'Source',
       'Contact',
-      'Location',
       'Date/time',
       'Official site',
       'Ticket information',
@@ -1123,9 +1121,10 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
     if (text.isEmpty) return const SizedBox.shrink();
 
-    // Regex for URLs and Emails
-    final urlPattern = r'(?:https?://|www\.)\S+';
-    final emailPattern = r'\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b';
+    // Improved Regex for URLs and Emails
+    // Captures http/https/www URLs and emails
+    final urlPattern = r'((?:https?:\/\/|www\.)[^\s\u200B]+)';
+    final emailPattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}';
     final combinedPattern = '($urlPattern)|($emailPattern)';
     final regExp = RegExp(combinedPattern, caseSensitive: false);
 
@@ -1145,7 +1144,6 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     int start = 0;
 
     for (final match in matches) {
-      // Text before match
       if (match.start > start) {
         spans.add(
           TextSpan(
@@ -1158,9 +1156,42 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         );
       }
 
-      final matchedText = text.substring(match.start, match.end);
+      var matchedText = text.substring(match.start, match.end);
+
+      // Clean trailing punctuation
+      String trailing = '';
+      final punctuationMatch = RegExp(r'[.,;?!)]+$').firstMatch(matchedText);
+      if (punctuationMatch != null) {
+        trailing = matchedText.substring(punctuationMatch.start);
+        matchedText = matchedText.substring(0, punctuationMatch.start);
+      }
+
+      if (matchedText.isEmpty) {
+        // If match was ONLY punctuation, just print it
+        spans.add(
+          TextSpan(
+            text: trailing,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.8),
+              height: 1.6,
+            ),
+          ),
+        );
+        start = match.end;
+        continue;
+      }
+
+      // Determine URL
       final isEmail = RegExp(emailPattern).hasMatch(matchedText);
-      final url = isEmail ? 'mailto:$matchedText' : matchedText;
+      String url;
+      if (isEmail) {
+        url = 'mailto:$matchedText';
+      } else {
+        url = matchedText;
+        if (!url.startsWith('http')) {
+          url = 'https://$url';
+        }
+      }
 
       spans.add(
         TextSpan(
@@ -1175,10 +1206,21 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         ),
       );
 
+      if (trailing.isNotEmpty) {
+        spans.add(
+          TextSpan(
+            text: trailing,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.8),
+              height: 1.6,
+            ),
+          ),
+        );
+      }
+
       start = match.end;
     }
 
-    // Remaining text
     if (start < text.length) {
       spans.add(
         TextSpan(
