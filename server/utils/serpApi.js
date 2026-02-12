@@ -1,7 +1,7 @@
 const axios = require("axios");
 const { getFirestore } = require("firebase-admin/firestore");
 
-const db = getFirestore();
+// const db = getFirestore(); // Removed: Not used here
 const SERPAPI_KEY = process.env.SERPAPI_API_KEY;
 const BASE_URL = "https://serpapi.com/search.json";
 

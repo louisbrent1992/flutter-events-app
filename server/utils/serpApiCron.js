@@ -15,8 +15,6 @@ const { getFirestore } = require("firebase-admin/firestore");
 const crypto = require("crypto");
 const { fetchGoogleEvents } = require("./serpApi");
 
-const db = getFirestore();
-
 // List of cities to monitor
 // Add more cities here, but ensure (24h / interval) * cities <= 250
 const TARGET_CITIES = [
@@ -37,6 +35,7 @@ function generateEventId(url) {
 }
 
 async function runSerpApiSync() {
+    const db = getFirestore();
     // Pick a random city to update
     const city = TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
     const query = `Events in ${city}`;
