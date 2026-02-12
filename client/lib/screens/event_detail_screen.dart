@@ -1122,8 +1122,9 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     if (text.isEmpty) return const SizedBox.shrink();
 
     // Improved Regex for URLs and Emails
-    // Captures http/https/www URLs and emails
-    final urlPattern = r'((?:https?:\/\/|www\.)[^\s\u200B]+)';
+    // Captures http/https/www URLs, domain.tld, and emails
+    final urlPattern =
+        r'((?:https?:\/\/|www\.)[^\s\u200B]+|\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b(?:/[^\s\u200B]*)?)';
     final emailPattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}';
     final combinedPattern = '($urlPattern)|($emailPattern)';
     final regExp = RegExp(combinedPattern, caseSensitive: false);
