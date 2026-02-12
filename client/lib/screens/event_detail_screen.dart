@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:eventease/providers/event_provider.dart';
@@ -703,15 +704,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
             ),
           ),
           const SizedBox(height: 12),
-          Text(
-            widget.event.description.isEmpty
-                ? 'No description available for this event.'
-                : widget.event.description,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: scheme.onSurface.withValues(alpha: 0.8),
-              height: 1.6,
-            ),
-          ),
+          _buildLinkifiedDescription(context, widget.event.description),
           const SizedBox(height: 28),
 
           // Location section
@@ -1024,5 +1017,83 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildLinkifiedDescription(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    if (text.isEmpty) {
+      return Text(
+        'No description available for this event.',
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: scheme.onSurface.withValues(alpha: 0.8),
+          height: 1.6,
+        ),
+      );
+    }
+
+    final urlRegExp = RegExp(r'https?://[^\s]+');
+    final matches = urlRegExp.allMatches(text);
+
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: scheme.onSurface.withValues(alpha: 0.8),
+          height: 1.6,
+        ),
+      );
+    }
+
+    final spans = <InlineSpan>[];
+    int start = 0;
+
+    for (final match in matches) {
+      // Add text before the link
+      if (match.start > start) {
+        spans.add(
+          TextSpan(
+            text: text.substring(start, match.start),
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.8),
+              height: 1.6,
+            ),
+          ),
+        );
+      }
+
+      // Add the link
+      final url = text.substring(match.start, match.end);
+      spans.add(
+        TextSpan(
+          text: url,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: scheme.primary,
+            height: 1.6,
+            decoration: TextDecoration.underline,
+            decorationColor: scheme.primary,
+          ),
+          recognizer: TapGestureRecognizer()..onTap = () => _openUrl(url),
+        ),
+      );
+
+      start = match.end;
+    }
+
+    // Add remaining text
+    if (start < text.length) {
+      spans.add(
+        TextSpan(
+          text: text.substring(start),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: scheme.onSurface.withValues(alpha: 0.8),
+            height: 1.6,
+          ),
+        ),
+      );
+    }
+
+    return Text.rich(TextSpan(children: spans));
   }
 }
