@@ -704,7 +704,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildLinkifiedDescription(context, widget.event.description),
+          _buildStructuredDescription(context, widget.event.description),
           const SizedBox(height: 28),
 
           // Location section
@@ -1019,22 +1019,117 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     );
   }
 
-  Widget _buildLinkifiedDescription(BuildContext context, String text) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    if (text.isEmpty) {
-      return Text(
+  Widget _buildStructuredDescription(BuildContext context, String description) {
+    if (description.isEmpty) {
+      return _buildRichText(
+        context,
         'No description available for this event.',
-        style: theme.textTheme.bodyLarge?.copyWith(
-          color: scheme.onSurface.withValues(alpha: 0.8),
-          height: 1.6,
-        ),
       );
     }
 
-    final urlRegExp = RegExp(r'https?://[^\s]+');
-    final matches = urlRegExp.allMatches(text);
+    final keywords = [
+      'Event details',
+      'Source',
+      'Contact',
+      'Location',
+      'Date/time',
+      'Official site',
+      'Ticket information',
+      'Organizer',
+    ];
+
+    // Create a generic regex pattern
+    final pattern = keywords.map((k) => RegExp.escape(k)).join('|');
+    final splitRegExp = RegExp(
+      r'\b(' + pattern + r'):\s*',
+      caseSensitive: false,
+    );
+
+    // Check if we have any matches
+    if (!splitRegExp.hasMatch(description)) {
+      return _buildRichText(context, description);
+    }
+
+    // Parse
+    final sections = <MapEntry<String, String>>[];
+    final matches = splitRegExp.allMatches(description).toList();
+
+    // Intro text (before first match)
+    if (matches.isNotEmpty && matches.first.start > 0) {
+      sections.add(
+        MapEntry('About', description.substring(0, matches.first.start).trim()),
+      );
+    }
+
+    for (int i = 0; i < matches.length; i++) {
+      final match = matches[i];
+      final key =
+          description
+              .substring(match.start, match.end)
+              .replaceAll(':', '')
+              .trim();
+      final start = match.end;
+      final end =
+          (i + 1 < matches.length) ? matches[i + 1].start : description.length;
+      var value = description.substring(start, end).trim();
+      // Remove trailing period if it looks like a sentence end after a value
+      if (value.endsWith('.') && value.length > 1) {
+        value = value.substring(0, value.length - 1);
+      }
+
+      if (value.isNotEmpty) {
+        sections.add(MapEntry(key, value));
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children:
+          sections.map((entry) {
+            final isAbout = entry.key == 'About';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child:
+                  isAbout
+                      ? _buildRichText(context, entry.value)
+                      : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 90,
+                            child: Text(
+                              entry.key,
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                          Expanded(child: _buildRichText(context, entry.value)),
+                        ],
+                      ),
+            );
+          }).toList(),
+    );
+  }
+
+  Widget _buildRichText(BuildContext context, String text) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    if (text.isEmpty) return const SizedBox.shrink();
+
+    // Regex for URLs and Emails
+    final urlPattern = r'(?:https?://|www\.)\S+';
+    final emailPattern = r'\b[\w\.-]+@[\w\.-]+\.\w{2,4}\b';
+    final combinedPattern = '($urlPattern)|($emailPattern)';
+    final regExp = RegExp(combinedPattern, caseSensitive: false);
+
+    final matches = regExp.allMatches(text);
 
     if (matches.isEmpty) {
       return Text(
@@ -1050,7 +1145,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     int start = 0;
 
     for (final match in matches) {
-      // Add text before the link
+      // Text before match
       if (match.start > start) {
         spans.add(
           TextSpan(
@@ -1063,11 +1158,13 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         );
       }
 
-      // Add the link
-      final url = text.substring(match.start, match.end);
+      final matchedText = text.substring(match.start, match.end);
+      final isEmail = RegExp(emailPattern).hasMatch(matchedText);
+      final url = isEmail ? 'mailto:$matchedText' : matchedText;
+
       spans.add(
         TextSpan(
-          text: url,
+          text: matchedText,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: scheme.primary,
             height: 1.6,
@@ -1081,7 +1178,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
       start = match.end;
     }
 
-    // Add remaining text
+    // Remaining text
     if (start < text.length) {
       spans.add(
         TextSpan(
