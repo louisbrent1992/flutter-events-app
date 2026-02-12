@@ -106,7 +106,7 @@ function mapSeatgeekEvent(sgEvent) {
         source: "seatgeek",
         title: sgEvent.short_title || sgEvent.title,
         description: description,
-        startAt: sgEvent.datetime_utc, // ISO string
+        startAt: sgEvent.datetime_utc ? (sgEvent.datetime_utc.endsWith('Z') ? sgEvent.datetime_utc : sgEvent.datetime_utc + 'Z') : new Date().toISOString(),
         endAt: null, // Often not provided
         venueName: venue.name || "Unknown Venue",
         address: venue.address || "",
