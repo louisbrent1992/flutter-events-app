@@ -253,10 +253,9 @@ class _HomeScreenState extends State<HomeScreen>
                           onViewAll: () => _go(context, '/discover'),
                         ),
                         const SizedBox(height: 14),
-                        if (discover.homeEvents.length > 6)
-                          ...discover.homeEvents
-                              .skip(6)
-                              .take(4)
+                        if (discover.events.isNotEmpty)
+                          ...discover.events
+                              .take(5)
                               .map(
                                 (e) => Padding(
                                   padding: EdgeInsets.only(

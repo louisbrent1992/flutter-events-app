@@ -31,6 +31,7 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   final _search = TextEditingController();
   final _searchFocus = FocusNode();
+  final PageController _pageController = PageController(viewportFraction: 0.85);
   GoogleMapController? _mapController;
   Event? _selectedEvent;
   Timer? _debounce;
@@ -76,6 +77,7 @@ class _MapScreenState extends State<MapScreen> {
     _searchFocus.dispose();
     _debounce?.cancel();
     _mapController?.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -153,7 +155,7 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Navigate to user's current location
+  /// Navigate to user's current location and load local events
   Future<void> _goToCurrentLocation() async {
     setState(() => _isLoadingLocation = true);
     try {
@@ -190,6 +192,32 @@ class _MapScreenState extends State<MapScreen> {
           13.0,
         ),
       );
+
+      // Fetch events for this location
+      final address = await GoogleMapsService.reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (address != null && mounted) {
+        // Crude city extraction: Try to find "City, State" pattern
+        // Or just pass the address to the provider and let it handle/parse
+        // For now, let's try to extract the city part (usually first or second component)
+        // This is a heuristic.
+        String city = address.split(',').first.trim();
+        if (address.contains(',')) {
+          // If address is "1600 Amphitheatre Pkwy, Mountain View, CA 94043, USA"
+          // We want "Mountain View".
+          final parts = address.split(',');
+          if (parts.length >= 3) {
+            city = parts[1].trim();
+          }
+        }
+
+        final discover = context.read<DiscoverProvider>();
+        discover.setFilters(city: city);
+        discover.load(page: 1, limit: 30, forceRefresh: true);
+      }
     } catch (e) {
       debugPrint('Location error: $e');
     } finally {
@@ -517,28 +545,36 @@ class _MapScreenState extends State<MapScreen> {
                         ),
                         child: SizedBox(
                           height: 200,
-                          child: ListView.separated(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: AppSpacing.responsive(context),
-                            ),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: events.length > 12 ? 12 : events.length,
-                            separatorBuilder:
-                                (_, __) => const SizedBox(width: 12),
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: events.length > 20 ? 20 : events.length,
+                            onPageChanged: (index) {
+                              final e = events[index];
+                              setState(() => _selectedEvent = e);
+                              if (e.latitude != null && e.longitude != null) {
+                                _mapController?.animateCamera(
+                                  CameraUpdate.newLatLng(
+                                    LatLng(e.latitude!, e.longitude!),
+                                  ),
+                                );
+                              }
+                            },
                             itemBuilder: (context, i) {
                               final e = events[i];
                               final isSelected = _selectedEvent?.id == e.id;
-                              return SizedBox(
-                                width: 260,
-                                child: Opacity(
-                                  opacity: isSelected ? 1 : 0.85,
+                              return AnimatedOpacity(
+                                duration: const Duration(milliseconds: 300),
+                                opacity: isSelected ? 1.0 : 0.6,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                  ),
                                   child: GestureDetector(
                                     onTap: () {
-                                      setState(() => _selectedEvent = e);
-                                      _mapController?.animateCamera(
-                                        CameraUpdate.newLatLng(
-                                          LatLng(e.latitude!, e.longitude!),
-                                        ),
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/eventDetail',
+                                        arguments: e,
                                       );
                                     },
                                     child: EventPosterCard(

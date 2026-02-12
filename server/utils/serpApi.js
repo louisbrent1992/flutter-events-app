@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { getFirestore } = require("firebase-admin/firestore");
+const { upgradeImageUrl } = require("./imageUtils");
 
 // const db = getFirestore(); // Removed: Not used here
 const SERPAPI_KEY = process.env.SERPAPI_API_KEY;
@@ -68,9 +69,16 @@ function mapSerpApiEvent(ev) {
         }
     }
 
+
+
     // Extract image
     let imageUrl = ev.thumbnail;
     if (ev.image) imageUrl = ev.image;
+
+    // Upgrade image quality
+    if (imageUrl) {
+        imageUrl = upgradeImageUrl(imageUrl);
+    }
 
     // Price
     let ticketPrice = null;

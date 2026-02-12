@@ -177,7 +177,7 @@ class DiscoverProvider extends ChangeNotifier {
       // We pass a generic category or query to ensure external APIs (SeatGeek) return data
       // even if our internal database is empty.
       final resp = await DiscoverService.getDiscoverEvents(
-        limit: 10,
+        limit: 20,
         query: 'events', // Generic query to trigger broad search
       );
 

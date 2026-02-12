@@ -214,10 +214,24 @@ class GoogleMapsService {
     }
   }
 
+  // Local cache for reverse geocoded addresses
+  static final Map<String, String> _reverseGeocodeCache = {};
+
   /// Reverse geocode coordinates to an address.
   ///
-  /// Cost: ~$0.005 per request (no caching for this)
+  /// Cost: ~$0.005 per request.
+  /// Optimized with local LRU-style caching (rounded to ~110m precision).
   static Future<String?> reverseGeocode(double lat, double lng) async {
+    // Round to 3 decimal places (~110m precision) to increase cache hit rate
+    final latKey = lat.toStringAsFixed(3);
+    final lngKey = lng.toStringAsFixed(3);
+    final cacheKey = '$latKey,$lngKey';
+
+    if (_reverseGeocodeCache.containsKey(cacheKey)) {
+      debugPrint('Reverse geocoding cache HIT: $cacheKey');
+      return _reverseGeocodeCache[cacheKey];
+    }
+
     try {
       final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$_apiKey',
@@ -229,7 +243,12 @@ class GoogleMapsService {
       final data = jsonDecode(response.body);
       if (data['status'] != 'OK' || data['results'].isEmpty) return null;
 
-      return data['results'][0]['formatted_address'];
+      final address = data['results'][0]['formatted_address'] as String;
+
+      // Cache the result
+      _reverseGeocodeCache[cacheKey] = address;
+
+      return address;
     } catch (e) {
       debugPrint('Reverse geocoding error: $e');
       return null;

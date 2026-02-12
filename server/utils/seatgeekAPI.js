@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { upgradeImageUrl } = require("./imageUtils");
 
 const SEATGEEK_CLIENT_ID = process.env.SEATGEEK_CLIENT_ID;
 const BASE_URL = "https://api.seatgeek.com/2/events";
@@ -67,6 +68,7 @@ function mapSeatgeekEvent(sgEvent) {
     if (sgEvent.performers && sgEvent.performers.length > 0) {
         const p = sgEvent.performers[0];
         imageUrl = (p.images && p.images.huge) || p.image;
+        if (imageUrl) imageUrl = upgradeImageUrl(imageUrl);
     }
 
     // Generate a rich description if none exists
