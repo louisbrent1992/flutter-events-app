@@ -12,10 +12,13 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
     
-    // Apply lint configuration to all subprojects
+    // Fix: Inject missing namespace for older plugins that don't declare one (AGP 8+ requirement)
     afterEvaluate {
         if (project.hasProperty("android")) {
             configure<com.android.build.gradle.BaseExtension> {
+                if (namespace.isNullOrEmpty()) {
+                    namespace = project.group.toString()
+                }
                 lintOptions {
                     isAbortOnError = false
                     isIgnoreWarnings = true
