@@ -14,6 +14,8 @@ import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
 import '../components/offline_banner.dart';
 import '../components/inline_banner_ad.dart';
+import '../components/glass_surface.dart';
+import '../components/section_header.dart';
 import 'package:file_picker/file_picker.dart';
 
 class ImportEventScreen extends StatefulWidget {
@@ -175,7 +177,12 @@ class _ImportEventScreenState extends State<ImportEventScreen>
 
       if (!context.mounted) return;
       if (resp.success && resp.data != null) {
-        await _saveDraftAsEvent(resp.data!, context, fromAi: true);
+        var event = resp.data!;
+        if ((event.imageUrl == null || event.imageUrl!.trim().isEmpty)) {
+          // Use the scanned image itself if AI didn't extract a URL
+          event = event.copyWith(imageUrl: 'data:image/jpeg;base64,$b64');
+        }
+        await _saveDraftAsEvent(event, context, fromAi: true);
       } else {
         SnackBarHelper.showError(context, resp.userFriendlyMessage);
       }
@@ -261,6 +268,11 @@ class _ImportEventScreenState extends State<ImportEventScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final pad = AppSpacing.responsive(context);
+
     return FadeTransition(
       opacity: _fadeInAnimation,
       child: Scaffold(
@@ -271,49 +283,234 @@ class _ImportEventScreenState extends State<ImportEventScreen>
         ),
         body: SafeArea(
           bottom: false,
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.responsive(context)),
-            child: ListView(
-              children: [
-                const OfflineBanner(),
-                const InlineBannerAd(),
-                TextField(
-                  controller: _urlController,
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    labelText: 'Event link',
-                    hintText: 'Paste Instagram/TikTok/YouTube/web link…',
-                    suffixIcon: IconButton(
-                      tooltip: 'Paste',
-                      icon: const Icon(Icons.paste_rounded),
-                      onPressed: () => _pasteUrl(context),
+          child: ListView(
+            padding: EdgeInsets.only(
+              left: pad,
+              right: pad,
+              top: AppSpacing.responsive(
+                context,
+                mobile: 10,
+                tablet: 16,
+                desktop: 18,
+              ),
+              bottom: 140,
+            ),
+            children: [
+              const OfflineBanner(),
+              const InlineBannerAd(),
+
+              // ── Hero section ──────────────────────────────
+              _buildHeroSection(theme, scheme, isDark),
+              SizedBox(height: AppSpacing.xl),
+
+              // ── Import from Link ──────────────────────────
+              const SectionHeader(
+                title: 'Paste a Link',
+                subtitle:
+                    'Import from Instagram, TikTok, Eventbrite, or any web page.',
+              ),
+              GlassSurface(
+                blurSigma: 18,
+                borderRadius: BorderRadius.circular(AppRadii.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: _urlController,
+                      keyboardType: TextInputType.url,
+                      decoration: InputDecoration(
+                        labelText: 'Event link',
+                        hintText: 'https://…',
+                        prefixIcon: Icon(
+                          Icons.link_rounded,
+                          color: scheme.primary,
+                        ),
+                        suffixIcon: IconButton(
+                          tooltip: 'Paste from clipboard',
+                          icon: Icon(
+                            Icons.content_paste_rounded,
+                            color: scheme.primary.withValues(alpha: 0.8),
+                          ),
+                          onPressed: () => _pasteUrl(context),
+                        ),
+                      ),
+                      onSubmitted: (v) => _importFromUrl(context, v),
                     ),
+                    SizedBox(height: AppSpacing.md),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed:
+                            () => _importFromUrl(context, _urlController.text),
+                        icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                        label: const Text('Import event'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: AppSpacing.xl),
+
+              // ── Other methods ─────────────────────────────
+              const SectionHeader(
+                title: 'Other Methods',
+                subtitle: 'Scan a flyer or pull in events from your calendar.',
+              ),
+
+              // Scan Flyer card
+              _buildMethodCard(
+                context: context,
+                icon: Icons.document_scanner_rounded,
+                iconColor: AppPalette.emerald,
+                title: 'Scan Flyer',
+                description:
+                    'Upload a poster, screenshot, or flyer and our AI will extract the event details automatically.',
+                buttonLabel: 'Choose image',
+                onPressed: () => _scanFlyer(context),
+              ),
+
+              SizedBox(height: AppSpacing.sm),
+
+              // Import from Calendar card
+              _buildMethodCard(
+                context: context,
+                icon: Icons.calendar_month_rounded,
+                iconColor: AppPalette.accentBlue,
+                title: 'Import from Calendar',
+                description:
+                    'Pull events directly from your device calendar into EventEase.',
+                buttonLabel: 'Open calendar',
+                onPressed:
+                    () => Navigator.pushNamed(context, '/importCalendar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Hero illustration ───────────────────────────────────────────────────────
+  Widget _buildHeroSection(ThemeData theme, ColorScheme scheme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary.withValues(alpha: isDark ? 0.20 : 0.10),
+            scheme.secondary.withValues(alpha: isDark ? 0.12 : 0.06),
+          ],
+        ),
+        border: Border.all(
+          color: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: isDark ? 0.25 : 0.14),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.add_circle_outline_rounded,
+              size: 30,
+              color: scheme.primary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Add events effortlessly',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
-                  onSubmitted: (v) => _importFromUrl(context, v),
                 ),
-                SizedBox(height: AppSpacing.md),
-                FilledButton.icon(
-                  onPressed: () => _importFromUrl(context, _urlController.text),
-                  icon: const Icon(Icons.link_rounded),
-                  label: const Text('Import from link'),
-                ),
-                SizedBox(height: AppSpacing.md),
-                OutlinedButton.icon(
-                  onPressed: () => _scanFlyer(context),
-                  icon: const Icon(Icons.camera_alt_rounded),
-                  label: const Text('Scan flyer / screenshot'),
-                ),
-                SizedBox(height: AppSpacing.md),
-                OutlinedButton.icon(
-                  onPressed:
-                      () => Navigator.pushNamed(context, '/importCalendar'),
-                  icon: const Icon(Icons.calendar_month_rounded),
-                  label: const Text('Import from Calendar'),
+                const SizedBox(height: 4),
+                Text(
+                  'Paste a link, scan a flyer, or import from your calendar — AI does the rest.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.70),
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  // ── Reusable method card ────────────────────────────────────────────────────
+  Widget _buildMethodCard({
+    required BuildContext context,
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String description,
+    required String buttonLabel,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    return GlassSurface(
+      blurSigma: 14,
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: isDark ? 0.20 : 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 22, color: iconColor),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.65),
+                    height: 1.35,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: onPressed,
+                    child: Text(buttonLabel),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

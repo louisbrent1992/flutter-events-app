@@ -44,7 +44,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
     if (time == null || !mounted) return;
     setState(() {
-      _startAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _startAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -65,7 +71,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       sourcePlatform: 'manual',
     );
 
-    final created = await context.read<EventProvider>().createEvent(event, context);
+    final created = await context.read<EventProvider>().createEvent(
+      event,
+      context,
+    );
     if (!mounted) return;
     if (created != null) {
       SnackBarHelper.showSuccess(context, 'Event created');
@@ -73,7 +82,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     } else {
       SnackBarHelper.showError(
         context,
-        context.read<EventProvider>().error?.userFriendlyMessage ?? 'Failed to create event',
+        context.read<EventProvider>().error?.userFriendlyMessage ??
+            'Failed to create event',
       );
     }
   }
@@ -86,12 +96,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       appBar: CustomAppBar(
         title: 'Create',
         fullTitle: 'Create Event',
-        actions: [
-          TextButton(
-            onPressed: _create,
-            child: const Text('Save'),
-          ),
-        ],
+        // actions: [
+        //   TextButton(
+        //     onPressed: _create,
+        //     child: const Text('Save'),
+        //   ),
+        // ],
       ),
       body: SafeArea(
         bottom: false,
@@ -143,10 +153,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
               ),
               SizedBox(height: AppSpacing.xl),
-              FilledButton(
-                onPressed: _create,
-                child: const Text('Save event'),
-              ),
+              FilledButton(onPressed: _create, child: const Text('Save event')),
             ],
           ),
         ),
@@ -154,5 +161,3 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     );
   }
 }
-
-

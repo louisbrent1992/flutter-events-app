@@ -529,15 +529,7 @@ class _MyEventsScreenState extends State<MyEventsScreen>
 
     return PopupMenuButton<String>(
       tooltip: 'Actions',
-      icon: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: isDark ? 0.3 : 0.6),
-          shape: BoxShape.circle,
-          border: Border.all(color: scheme.outline.withValues(alpha: 0.15)),
-        ),
-        child: const Icon(Icons.more_horiz_rounded, size: 20),
-      ),
+      icon: Container(child: const Icon(Icons.more_vert_rounded, size: 20)),
       color:
           isDark
               ? AppPalette.darkSurfaceElevated.withValues(alpha: 0.98)
@@ -613,6 +605,7 @@ class _MyEventsScreenState extends State<MyEventsScreen>
         valueListenable: _selectedDay,
         builder: (context, selected, _) {
           return TableCalendar<Event>(
+            availableGestures: AvailableGestures.horizontalSwipe,
             firstDay: DateTime.now().subtract(const Duration(days: 365)),
             lastDay: DateTime.now().add(const Duration(days: 365)),
             focusedDay: _focusedDay.value,

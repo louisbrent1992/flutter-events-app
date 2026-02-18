@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
@@ -109,13 +110,41 @@ class _EventPosterCardState extends State<EventPosterCard>
 
     Widget imageLayer;
     if (hasImage) {
-      imageLayer = CachedNetworkImage(
-        imageUrl: widget.event.imageUrl!.trim(),
-        fit: BoxFit.cover,
-        fadeInDuration: const Duration(milliseconds: 200),
-        placeholder: (context, _) => _buildPlaceholder(accentColor),
-        errorWidget: (context, _, __) => _buildPlaceholder(accentColor),
-      );
+      final url = widget.event.imageUrl!.trim();
+      if (url.startsWith('data:')) {
+        try {
+          const base64Prefix = 'base64,';
+          final index = url.indexOf(base64Prefix);
+          if (index != -1) {
+            final bytes = base64Decode(
+              url.substring(index + base64Prefix.length),
+            );
+            imageLayer = Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _buildPlaceholder(accentColor),
+            );
+          } else {
+            imageLayer = _buildPlaceholder(accentColor);
+          }
+        } catch (_) {
+          imageLayer = _buildPlaceholder(accentColor);
+        }
+      } else if (url.startsWith('assets/')) {
+        imageLayer = Image.asset(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPlaceholder(accentColor),
+        );
+      } else {
+        imageLayer = CachedNetworkImage(
+          imageUrl: url,
+          fit: BoxFit.cover,
+          fadeInDuration: const Duration(milliseconds: 200),
+          placeholder: (context, _) => _buildPlaceholder(accentColor),
+          errorWidget: (context, _, __) => _buildPlaceholder(accentColor),
+        );
+      }
     } else {
       imageLayer = _buildPlaceholder(accentColor);
     }

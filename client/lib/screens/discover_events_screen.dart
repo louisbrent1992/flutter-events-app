@@ -36,11 +36,13 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
   late AnimationController _animController;
   late Animation<double> _fadeAnim;
 
-  // Layout mode icons and labels
+  // Layout mode icons and labels – index must match the layout rendered:
+  // 0 = full-card list, 1 = 2-column grid, 2 = compact rows.
+  // The toggle button shows the NEXT mode's icon as a preview.
   static const List<Map<String, dynamic>> _layoutModes = [
-    {'icon': Icons.view_list_rounded, 'label': 'Compact'},
-    {'icon': Icons.grid_view_rounded, 'label': 'Grid'},
     {'icon': Icons.view_agenda_rounded, 'label': 'List'},
+    {'icon': Icons.grid_view_rounded, 'label': 'Grid'},
+    {'icon': Icons.view_list_rounded, 'label': 'Compact'},
   ];
 
   // Category data matching SeatGeek API event types

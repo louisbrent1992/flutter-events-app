@@ -66,6 +66,7 @@ class _GeneratedPlanDetailScreenState extends State<GeneratedPlanDetailScreen> {
                     .toList()
                 : const [],
         sourcePlatform: 'ai_planner',
+        imageUrl: 'assets/images/generic_event_placeholder.png',
       );
 
       final saved = await provider.createEvent(e, context);

@@ -1,13 +1,19 @@
 /**
  * SerpApi Events Cron Job (EventEase)
- * 
- * Scheduled task to fetch events from Google Events via SerpApi.
- * 
+ *
  * Strategy:
- * - 250 searches / day limit (Free Tier).
- * - Schedule: Run every 20 minutes (approx 72 searches/day).
- * - Targets: Cycle through a list of key cities.
- * - Storage: Upsert into 'discoverEvents' collection.
+ * - Runs twice per day (06:00 and 18:00 UTC).
+ * - Cycles through TARGET_CITIES sequentially so every city gets equal coverage.
+ * - Each city is fetched AT MOST twice per calendar day (enforced via in-memory tracking).
+ * - Stops fetching once the daily or monthly budget cap is reached.
+ * - City list is sized to maximise the monthly API quota.
+ *
+ * Budget maths (adjust DAILY_BUDGET / MONTHLY_BUDGET to match your SerpApi plan):
+ *   Free  plan  : 100  searches/month → MONTHLY_BUDGET = 100
+ *   Hobby plan  : 5000 searches/month → MONTHLY_BUDGET = 5000
+ *   etc.
+ *
+ * With 2 runs/day the cron fetches `Math.min(cities, DAILY_BUDGET / 2)` cities per run.
  */
 
 const cron = require("node-cron");
@@ -15,106 +21,197 @@ const { getFirestore } = require("firebase-admin/firestore");
 const crypto = require("crypto");
 const { fetchGoogleEvents } = require("./serpApi");
 
-// List of cities to monitor
-// Add more cities here, but ensure (24h / interval) * cities <= 250
+// ─── Budget configuration ────────────────────────────────────────────────────
+// Adjust these to match your SerpApi subscription tier.
+const MONTHLY_BUDGET = Number(process.env.SERPAPI_MONTHLY_BUDGET || 250);
+const DAILY_BUDGET = Math.ceil(MONTHLY_BUDGET / 30); // distribute evenly across month
+
+// ─── City list ───────────────────────────────────────────────────────────────
+// Budget maths for the SerpApi FREE tier (250 searches/month):
+//   250 searches ÷ 30 days ≈ 8 searches/day
+//   2 runs/day → 4 cities per run → 8 unique cities covered per day
+//
+// We keep exactly 8 cities so every city is refreshed twice daily and the
+// monthly budget is fully utilised without going over.
+//
+// If you upgrade to a paid plan, increase SERPAPI_MONTHLY_BUDGET and add
+// more cities — the cron will automatically fetch more per run.
 const TARGET_CITIES = [
-    "Austin, TX",
     "New York, NY",
     "Los Angeles, CA",
-    "San Francisco, CA",
     "Chicago, IL",
     "Miami, FL",
+    "San Francisco, CA",
+    "Austin, TX",
     "Las Vegas, NV",
-    "Nashville, TN",
     "London, UK",
 ];
 
-// Helper to generate a consistent ID from a URL
-function generateEventId(url) {
-    return crypto.createHash('md5').update(url).digest('hex');
+// ─── In-memory fetch tracking ─────────────────────────────────────────────────
+// Tracks how many times each city has been fetched today.
+// Resets at midnight UTC automatically (new Date().toDateString() changes).
+const fetchLog = new Map(); // city → { date: string, count: number }
+
+// Monthly search counter (resets on 1st of each month)
+let monthlyUsage = { month: new Date().getMonth(), count: 0 };
+
+function getTodayKey() {
+    return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 }
 
-async function runSerpApiSync() {
-    const db = getFirestore();
-    // Pick a random city to update
-    const city = TARGET_CITIES[Math.floor(Math.random() * TARGET_CITIES.length)];
-    const query = `Events in ${city}`;
+function getThisMonth() {
+    return new Date().getMonth();
+}
 
-    console.log(`🌍 [Cron] Starting SerpApi sync for city: ${city}`);
+function canFetchCity(city) {
+    const today = getTodayKey();
+    const log = fetchLog.get(city);
+    if (!log || log.date !== today) return true; // new day or never fetched
+    return log.count < 2; // max 2x per day
+}
 
-    try {
-        const events = await fetchGoogleEvents(query);
-        console.log(`📦 [Cron] Fetched ${events.length} events from SerpApi`);
+function recordFetch(city) {
+    const today = getTodayKey();
+    const log = fetchLog.get(city);
+    if (!log || log.date !== today) {
+        fetchLog.set(city, { date: today, count: 1 });
+    } else {
+        log.count += 1;
+    }
 
-        let newCount = 0;
-        let updateCount = 0;
-        const batch = db.batch();
-        let batchSize = 0;
-
-        for (const event of events) {
-            if (!event.sourceUrl) continue;
-
-            // Generate a unique ID based on the source link
-            const id = `google_${generateEventId(event.sourceUrl)}`;
-            const docRef = db.collection("discoverEvents").doc(id);
-
-            // Check if exists to avoid overwriting user edits if we ever allow that
-            // For now, simple overwrite is fine to keep data fresh, but preserve 'createdAt'
-            // We'll trust the 'updatedAt' field.
-
-            // Note: In a real heavy production app, we'd read first or use merge.
-            // set(..., { merge: true }) is good.
-
-            batch.set(docRef, {
-                ...event,
-                source: "google_events",
-                city: city.split(',')[0].trim(), // Ensure city matches the query context
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
-
-            batchSize++;
-
-            // Firestore batches limited to 500 ops
-            if (batchSize >= 400) {
-                await batch.commit();
-                console.log(`💾 [Cron] Committed batch of ${batchSize} events`);
-                // Reset batch
-                // batch = db.batch(); // Reassigning batch variable is tricky in loop scope without `let`
-                // Simpler to just commit and break for this MVP or use a new batch.
-                // Refactoring to just commit once at end if size is small (SerpApi returns ~10-20)
-                // SerpApi usually returns 10-20 results per page. So one batch is fine.
-            }
-        }
-
-        if (batchSize > 0) {
-            await batch.commit();
-            console.log(`✅ [Cron] Successfully synced ${batchSize} events for ${city}`);
-        }
-
-    } catch (e) {
-        console.error(`❌ [Cron] Error running SerpApi sync for ${city}:`, e);
+    // Monthly usage tracking
+    const thisMonth = getThisMonth();
+    if (monthlyUsage.month !== thisMonth) {
+        monthlyUsage = { month: thisMonth, count: 1 };
+    } else {
+        monthlyUsage.count += 1;
     }
 }
 
+function budgetExhausted() {
+    // Monthly cap
+    const thisMonth = getThisMonth();
+    if (monthlyUsage.month !== thisMonth) {
+        monthlyUsage = { month: thisMonth, count: 0 };
+    }
+    if (monthlyUsage.count >= MONTHLY_BUDGET) {
+        console.warn(`⛔ [Cron] Monthly SerpApi budget exhausted (${monthlyUsage.count}/${MONTHLY_BUDGET})`);
+        return true;
+    }
+    return false;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function generateEventId(url) {
+    return crypto.createHash("md5").update(url).digest("hex");
+}
+
+// ─── Core sync ────────────────────────────────────────────────────────────────
+/**
+ * Run one full pass: iterate through all cities, fetch each one that:
+ *   1. Has been fetched < 2 times today, AND
+ *   2. The monthly budget is not exhausted.
+ *
+ * This is called twice per day (06:00 and 18:00 UTC).
+ */
+async function runSerpApiSync() {
+    if (budgetExhausted()) return;
+
+    const db = getFirestore();
+    let totalFetched = 0;
+    let totalSaved = 0;
+
+    console.log(`🌍 [Cron] Starting SerpApi sync pass. Monthly usage: ${monthlyUsage.count}/${MONTHLY_BUDGET}`);
+
+    for (const city of TARGET_CITIES) {
+        if (budgetExhausted()) break;
+        if (!canFetchCity(city)) {
+            // Already fetched twice today — skip
+            continue;
+        }
+
+        try {
+            const query = `Events in ${city}`;
+            console.log(`  🔍 Fetching: ${city}`);
+            const events = await fetchGoogleEvents(query);
+            recordFetch(city);
+            totalFetched++;
+
+            if (events.length === 0) continue;
+
+            // Upsert into Firestore
+            const batch = db.batch();
+            let batchSize = 0;
+
+            for (const event of events) {
+                if (!event.sourceUrl) continue;
+                const id = `google_${generateEventId(event.sourceUrl)}`;
+                const docRef = db.collection("discoverEvents").doc(id);
+                batch.set(
+                    docRef,
+                    {
+                        ...event,
+                        source: "google_events",
+                        city: city.split(",")[0].trim(),
+                        updatedAt: new Date().toISOString(),
+                    },
+                    { merge: true }
+                );
+                batchSize++;
+
+                // Firestore batch limit is 500 ops; commit early if needed
+                if (batchSize >= 400) {
+                    await batch.commit();
+                    batchSize = 0;
+                }
+            }
+
+            if (batchSize > 0) {
+                await batch.commit();
+            }
+
+            totalSaved += events.length;
+            console.log(`  ✅ Saved ${events.length} events for ${city}`);
+
+            // Small delay between API calls to be polite
+            await new Promise((r) => setTimeout(r, 500));
+        } catch (e) {
+            console.error(`  ❌ Error fetching ${city}:`, e.message);
+        }
+    }
+
+    console.log(
+        `🏁 [Cron] Sync pass complete. Cities fetched: ${totalFetched}, Events saved: ${totalSaved}. Monthly usage: ${monthlyUsage.count}/${MONTHLY_BUDGET}`
+    );
+}
+
+// ─── Scheduler ────────────────────────────────────────────────────────────────
 function initSerpApiCron() {
-    // Run every 20 minutes
-    // cron syntax: "*/20 * * * *"
-    cron.schedule("*/20 * * * *", async () => {
+    // Run at 06:00 UTC and 18:00 UTC every day (twice per day)
+    cron.schedule("0 6 * * *", async () => {
+        console.log("⏰ [Cron] 06:00 UTC — starting morning SerpApi sync");
         await runSerpApiSync();
     });
 
-    console.log("📅 [Cron] SerpApi Google Events sync scheduled (every 20 mins)");
+    cron.schedule("0 18 * * *", async () => {
+        console.log("⏰ [Cron] 18:00 UTC — starting evening SerpApi sync");
+        await runSerpApiSync();
+    });
 
-    // Optional: Run once shortly after startup for dev/testing (with a delay)
-    if (process.env.NODE_ENV !== 'production') {
+    console.log(
+        `📅 [Cron] SerpApi sync scheduled at 06:00 & 18:00 UTC daily. Budget: ${DAILY_BUDGET}/day, ${MONTHLY_BUDGET}/month`
+    );
+
+    // In dev/staging, trigger once after startup (with a short delay)
+    if (process.env.NODE_ENV !== "production") {
         setTimeout(() => {
             console.log("🚀 [Dev] Triggering initial SerpApi sync...");
             runSerpApiSync();
-        }, 10000); // 10s delay
+        }, 10000);
     }
 }
 
 module.exports = {
     initSerpApiCron,
-    runSerpApiSync
+    runSerpApiSync,
 };

@@ -129,18 +129,11 @@ class _HomeScreenState extends State<HomeScreen>
             child: Container(
               width: 40,
               height: 40,
-              margin: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppPalette.accentGradient,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.3),
-                  width: 2,
-                ),
-              ),
+
+              decoration: BoxDecoration(),
               child: const Icon(
-                Icons.person_rounded,
-                color: Colors.white,
+                Icons.person_outline,
+                color: Colors.blueGrey,
                 size: 20,
               ),
             ),

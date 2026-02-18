@@ -178,6 +178,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                     .toList()
                 : const [],
         sourcePlatform: 'ai_planner',
+        imageUrl: 'assets/images/generic_event_placeholder.png',
       );
 
       final saved = await provider.createEvent(e, context);
@@ -196,6 +197,10 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final pad = AppSpacing.responsive(context);
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: CustomAppBar(
@@ -213,15 +218,11 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                 desktop: 30,
               ),
             ),
-            color: Theme.of(context).colorScheme.surface.withValues(
-              alpha: Theme.of(context).colorScheme.alphaVeryHigh,
-            ),
+            color: scheme.surface.withValues(alpha: scheme.alphaVeryHigh),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(
-                  alpha: Theme.of(context).colorScheme.overlayLight,
-                ),
+                color: scheme.outline.withValues(alpha: scheme.overlayLight),
                 width: 1,
               ),
             ),
@@ -245,7 +246,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                         Icon(
                           Icons.auto_awesome_rounded,
                           size: 18,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: scheme.primary,
                         ),
                         const SizedBox(width: 8),
                         const Text('Generate'),
@@ -259,7 +260,7 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                         Icon(
                           Icons.history_rounded,
                           size: 18,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: scheme.primary,
                         ),
                         const SizedBox(width: 8),
                         const Text('History'),
@@ -277,8 +278,8 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
               bottom: false,
               child: ListView(
                 padding: EdgeInsets.only(
-                  left: AppSpacing.responsive(context),
-                  right: AppSpacing.responsive(context),
+                  left: pad,
+                  right: pad,
                   top: AppSpacing.responsive(
                     context,
                     mobile: 10,
@@ -288,267 +289,46 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
                   bottom: 140,
                 ),
                 children: [
-                  Text(
-                    'Tell us what you want and we’ll draft a schedule you can save.',
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.78,
+                  // ── Hero banner ─────────────────────────────
+                  _buildHeroBanner(theme, scheme, isDark),
+                  SizedBox(height: AppSpacing.xl),
+
+                  // ── Vibe section ────────────────────────────
+                  const SectionHeader(
+                    title: "What's the vibe?",
+                    subtitle: 'Pick a mood or type your own.',
+                  ),
+                  _buildVibeSection(theme, scheme, isDark),
+                  SizedBox(height: AppSpacing.lg),
+
+                  // ── Details section ─────────────────────────
+                  const SectionHeader(
+                    title: 'Details',
+                    subtitle: 'The more you share, the better the itinerary.',
+                  ),
+                  _buildDetailsSection(theme, scheme, isDark),
+                  SizedBox(height: AppSpacing.lg),
+
+                  // ── Generate CTA ────────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: FilledButton.icon(
+                      onPressed: _generatePlan,
+                      icon: const Icon(Icons.auto_awesome_rounded, size: 20),
+                      label: const Text('Generate itinerary'),
+                      style: FilledButton.styleFrom(
+                        textStyle: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
 
-                  const SectionHeader(
-                    title: 'Inputs',
-                    subtitle: 'The more specific you are, the better the plan.',
-                  ),
-                  GlassSurface(
-                    blurSigma: 18,
-                    borderRadius: BorderRadius.circular(AppRadii.xl),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        TextField(
-                          controller: _vibe,
-                          decoration: const InputDecoration(
-                            labelText: 'Vibe',
-                            hintText: 'e.g. chill, energetic, artsy, classy…',
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          height: 40,
-                          child: ListView(
-                            scrollDirection: Axis.horizontal,
-                            children: [
-                              PillChip(
-                                label: 'Chill',
-                                selected: _vibe.text.toLowerCase().contains(
-                                  'chill',
-                                ),
-                                onTap:
-                                    () => setState(() => _vibe.text = 'Chill'),
-                              ),
-                              const SizedBox(width: 10),
-                              PillChip(
-                                label: 'Energetic',
-                                selected: _vibe.text.toLowerCase().contains(
-                                  'energetic',
-                                ),
-                                onTap:
-                                    () => setState(
-                                      () => _vibe.text = 'Energetic',
-                                    ),
-                              ),
-                              const SizedBox(width: 10),
-                              PillChip(
-                                label: 'Artsy',
-                                selected: _vibe.text.toLowerCase().contains(
-                                  'artsy',
-                                ),
-                                onTap:
-                                    () => setState(() => _vibe.text = 'Artsy'),
-                              ),
-                              const SizedBox(width: 10),
-                              PillChip(
-                                label: 'Date night',
-                                selected: _vibe.text.toLowerCase().contains(
-                                  'date',
-                                ),
-                                onTap:
-                                    () => setState(
-                                      () => _vibe.text = 'Date night',
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        TextField(
-                          controller: _budget,
-                          decoration: const InputDecoration(
-                            labelText: 'Budget',
-                            hintText: 'e.g. under \$75, free, mid-range…',
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        TextField(
-                          controller: _location,
-                          decoration: const InputDecoration(
-                            labelText: 'Location',
-                            hintText: 'e.g. Downtown Austin, East London…',
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        TextField(
-                          controller: _dates,
-                          decoration: const InputDecoration(
-                            labelText: 'Dates',
-                            hintText: 'e.g. Sat evening, or Dec 21–22',
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.md),
-                        TextField(
-                          controller: _constraints,
-                          maxLines: 2,
-                          decoration: const InputDecoration(
-                            labelText: 'Constraints (optional)',
-                            hintText:
-                                'e.g. no alcohol, wheelchair accessible, near subway…',
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.lg),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: _generatePlan,
-                            icon: const Icon(Icons.auto_awesome_rounded),
-                            label: const Text('Generate itinerary'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
+                  // ── Results ─────────────────────────────────
                   if (_plan != null) ...[
                     SizedBox(height: AppSpacing.xl),
-                    const SectionHeader(
-                      title: 'Result',
-                      subtitle: 'Review the itinerary, then save it as events.',
-                    ),
-                    GlassSurface(
-                      blurSigma: 18,
-                      borderRadius: BorderRadius.circular(AppRadii.xl),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            (_plan!['title'] ?? 'Your plan').toString(),
-                            style: theme.textTheme.headlineMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          if (_itinerary.isEmpty)
-                            Text(
-                              'No itinerary items returned. Try again with more details.',
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.78,
-                                ),
-                              ),
-                            )
-                          else
-                            Column(
-                              children: [
-                                for (final raw in _itinerary)
-                                  if (raw is Map)
-                                    Padding(
-                                      padding: EdgeInsets.only(
-                                        bottom: AppSpacing.sm,
-                                      ),
-                                      child: GlassSurface(
-                                        blurSigma: 12,
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadii.lg,
-                                        ),
-                                        tintColor: theme.colorScheme.surface,
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Icon(
-                                              Icons.circle,
-                                              size: 10,
-                                              color:
-                                                  theme.colorScheme.secondary,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Text(
-                                                    (raw['title'] ?? 'Event')
-                                                        .toString(),
-                                                    style:
-                                                        theme
-                                                            .textTheme
-                                                            .titleMedium,
-                                                  ),
-                                                  const SizedBox(height: 4),
-                                                  Text(
-                                                    [
-                                                          _formatRecapDate(
-                                                                raw['startAt'],
-                                                              ) ??
-                                                              raw['startAt']
-                                                                  ?.toString(),
-                                                          raw['venueName']
-                                                              ?.toString(),
-                                                        ]
-                                                        .where(
-                                                          (s) =>
-                                                              s != null &&
-                                                              s
-                                                                  .toString()
-                                                                  .trim()
-                                                                  .isNotEmpty,
-                                                        )
-                                                        .join(' • '),
-                                                    maxLines: 2,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                    style: theme
-                                                        .textTheme
-                                                        .bodySmall
-                                                        ?.copyWith(
-                                                          color: theme
-                                                              .colorScheme
-                                                              .onSurface
-                                                              .withValues(
-                                                                alpha: 0.75,
-                                                              ),
-                                                        ),
-                                                  ),
-                                                  if ((raw['notes'] ?? '')
-                                                      .toString()
-                                                      .trim()
-                                                      .isNotEmpty) ...[
-                                                    const SizedBox(height: 8),
-                                                    Text(
-                                                      (raw['notes'] ?? '')
-                                                          .toString(),
-                                                      style: theme
-                                                          .textTheme
-                                                          .bodySmall
-                                                          ?.copyWith(
-                                                            color: theme
-                                                                .colorScheme
-                                                                .onSurface
-                                                                .withValues(
-                                                                  alpha: 0.80,
-                                                                ),
-                                                          ),
-                                                    ),
-                                                  ],
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                              ],
-                            ),
-                          const SizedBox(height: 6),
-                          OutlinedButton.icon(
-                            onPressed: _saveAsEvents,
-                            icon: const Icon(Icons.save_alt_rounded),
-                            label: const Text('Save itinerary as events'),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _buildResultSection(theme, scheme, isDark),
                   ],
                 ],
               ),
@@ -556,6 +336,411 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
           ),
           const FloatingBottomBar(),
         ],
+      ),
+    );
+  }
+
+  // ── Hero banner ─────────────────────────────────────────────────────────────
+  Widget _buildHeroBanner(ThemeData theme, ColorScheme scheme, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadii.xl),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            scheme.primary.withValues(alpha: isDark ? 0.20 : 0.10),
+            scheme.tertiary.withValues(alpha: isDark ? 0.12 : 0.06),
+          ],
+        ),
+        border: Border.all(
+          color: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: scheme.primary.withValues(alpha: isDark ? 0.25 : 0.14),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              size: 28,
+              color: scheme.primary,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Plan your perfect outing',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "Tell us what you're in the mood for and AI will draft a schedule you can save as events.",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurface.withValues(alpha: 0.70),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Vibe section ────────────────────────────────────────────────────────────
+  Widget _buildVibeSection(ThemeData theme, ColorScheme scheme, bool isDark) {
+    final vibes = [
+      ('Chill', Icons.spa_rounded),
+      ('Energetic', Icons.bolt_rounded),
+      ('Artsy', Icons.palette_rounded),
+      ('Date night', Icons.favorite_rounded),
+      ('Family', Icons.family_restroom_rounded),
+      ('Outdoor', Icons.park_rounded),
+    ];
+
+    return GlassSurface(
+      blurSigma: 18,
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (label, icon) in vibes)
+                PillChip(
+                  label: label,
+                  icon: icon,
+                  selected: _vibe.text.toLowerCase().contains(
+                    label.toLowerCase(),
+                  ),
+                  onTap: () => setState(() => _vibe.text = label),
+                ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _vibe,
+            decoration: InputDecoration(
+              labelText: 'Or describe your vibe',
+              hintText: 'e.g. classy brunch, weekend adventure…',
+              prefixIcon: Icon(
+                Icons.mood_rounded,
+                color: scheme.primary.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Details section ─────────────────────────────────────────────────────────
+  Widget _buildDetailsSection(
+    ThemeData theme,
+    ColorScheme scheme,
+    bool isDark,
+  ) {
+    return GlassSurface(
+      blurSigma: 18,
+      borderRadius: BorderRadius.circular(AppRadii.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _location,
+            decoration: InputDecoration(
+              labelText: 'Location',
+              hintText: 'e.g. Downtown Austin, East London…',
+              prefixIcon: Icon(
+                Icons.location_on_rounded,
+                color: AppPalette.emerald.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _dates,
+            decoration: InputDecoration(
+              labelText: 'When',
+              hintText: 'e.g. Saturday evening, Dec 21–22',
+              prefixIcon: Icon(
+                Icons.calendar_today_rounded,
+                color: AppPalette.accentBlue.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _budget,
+            decoration: InputDecoration(
+              labelText: 'Budget',
+              hintText: 'e.g. under \$75, free, mid-range…',
+              prefixIcon: Icon(
+                Icons.attach_money_rounded,
+                color: AppPalette.amber.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _constraints,
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: 'Constraints (optional)',
+              hintText: 'e.g. no alcohol, wheelchair accessible, near subway…',
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Icon(
+                  Icons.tune_rounded,
+                  color: scheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Result section ──────────────────────────────────────────────────────────
+  Widget _buildResultSection(ThemeData theme, ColorScheme scheme, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SectionHeader(
+          title: 'Your Itinerary',
+          subtitle: 'Review the plan, then save it as events.',
+        ),
+
+        // Plan title card
+        GlassSurface(
+          blurSigma: 18,
+          borderRadius: BorderRadius.circular(AppRadii.xl),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: scheme.primary.withValues(alpha: isDark ? 0.20 : 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.event_note_rounded,
+                  size: 22,
+                  color: scheme.primary,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  (_plan!['title'] ?? 'Your plan').toString(),
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        SizedBox(height: AppSpacing.sm),
+
+        if (_itinerary.isEmpty)
+          GlassSurface(
+            blurSigma: 14,
+            borderRadius: BorderRadius.circular(AppRadii.xl),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: scheme.onSurface.withValues(alpha: 0.5),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'No itinerary items returned. Try again with more details.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: scheme.onSurface.withValues(alpha: 0.70),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          // Timeline items
+          for (int i = 0; i < _itinerary.length; i++)
+            if (_itinerary[i] is Map)
+              _buildTimelineItem(
+                theme,
+                scheme,
+                isDark,
+                _itinerary[i] as Map,
+                index: i,
+                isLast: i == _itinerary.length - 1,
+              ),
+
+        SizedBox(height: AppSpacing.md),
+
+        // Action buttons
+        Row(
+          children: [
+            Expanded(
+              child: FilledButton.icon(
+                onPressed: _saveAsEvents,
+                icon: const Icon(Icons.save_alt_rounded, size: 18),
+                label: const Text('Save as events'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _generatePlan,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: const Text('Regenerate'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ── Individual timeline item ────────────────────────────────────────────────
+  Widget _buildTimelineItem(
+    ThemeData theme,
+    ColorScheme scheme,
+    bool isDark,
+    Map raw, {
+    required int index,
+    required bool isLast,
+  }) {
+    final timeStr =
+        _formatRecapDate(raw['startAt']) ?? raw['startAt']?.toString() ?? '';
+    final venue = raw['venueName']?.toString() ?? '';
+    final notes = (raw['notes'] ?? '').toString().trim();
+    final subtitle = [timeStr, venue].where((s) => s.isNotEmpty).join(' • ');
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.xs),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Timeline rail
+            SizedBox(
+              width: 36,
+              child: Column(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(
+                        alpha: isDark ? 0.22 : 0.12,
+                      ),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: scheme.primary.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${index + 1}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (!isLast)
+                    Expanded(
+                      child: Container(
+                        width: 2,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        color: scheme.outline.withValues(
+                          alpha: isDark ? 0.15 : 0.10,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Content card
+            Expanded(
+              child: GlassSurface(
+                blurSigma: 12,
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+                tintColor: scheme.surface,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (raw['title'] ?? 'Event').toString(),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitle.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (timeStr.isNotEmpty)
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 13,
+                              color: scheme.primary.withValues(alpha: 0.7),
+                            ),
+                          if (timeStr.isNotEmpty) const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              subtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.65),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    if (notes.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        notes,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurface.withValues(alpha: 0.75),
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
