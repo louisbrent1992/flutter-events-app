@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:eventease/components/custom_app_bar.dart';
+import 'package:eventease/components/nav_drawer.dart';
 import 'package:eventease/providers/event_provider.dart';
 import 'package:eventease/providers/subscription_provider.dart';
 import 'package:eventease/services/credits_service.dart';
@@ -277,9 +278,19 @@ class _ImportEventScreenState extends State<ImportEventScreen>
       opacity: _fadeInAnimation,
       child: Scaffold(
         backgroundColor: Colors.transparent,
+        drawer: const NavDrawer(),
         appBar: CustomAppBar(
           title: _startedFromShare ? 'Import' : 'Import',
           fullTitle: 'Import Event',
+          automaticallyImplyLeading: false,
+          leading: Builder(
+            builder:
+                (context) => IconButton(
+                  tooltip: 'Menu',
+                  icon: const Icon(Icons.menu_rounded, size: 22),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
+          ),
         ),
         body: SafeArea(
           bottom: false,

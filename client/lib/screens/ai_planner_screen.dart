@@ -12,6 +12,7 @@ import 'package:eventease/components/glass_surface.dart';
 import 'package:eventease/components/section_header.dart';
 import 'package:eventease/components/pill_chip.dart';
 import 'package:eventease/components/floating_bottom_bar.dart';
+import 'package:eventease/components/nav_drawer.dart';
 import '../models/event.dart';
 import '../utils/loading_dialog_helper.dart';
 import '../utils/snackbar_helper.dart';
@@ -203,21 +204,24 @@ class _AiPlannerScreenState extends State<AiPlannerScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      drawer: const NavDrawer(),
       appBar: CustomAppBar(
         title: 'Planner',
         fullTitle: 'AI Event Planner',
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (ctx) {
+            return IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu_rounded, size: 22),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            );
+          },
+        ),
         actions: [
           PopupMenuButton<String>(
             tooltip: 'More',
-            icon: Icon(
-              Icons.more_vert,
-              size: AppSizing.responsiveIconSize(
-                context,
-                mobile: 24,
-                tablet: 28,
-                desktop: 30,
-              ),
-            ),
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
             color: scheme.surface.withValues(alpha: scheme.alphaVeryHigh),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

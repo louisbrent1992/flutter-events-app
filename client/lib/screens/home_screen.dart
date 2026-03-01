@@ -90,7 +90,6 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     final isAuthed = context.watch<AuthService>().user != null;
     final discover = context.watch<DiscoverProvider>();
     final categories = _curatedCategories;
@@ -105,38 +104,18 @@ class _HomeScreenState extends State<HomeScreen>
 
         leading: Builder(
           builder: (context) {
-            return Container(
-              margin: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: scheme.surface.withValues(alpha: isDark ? 0.3 : 0.6),
-                border: Border.all(
-                  color: scheme.outline.withValues(alpha: 0.15),
-                ),
-              ),
-              child: IconButton(
-                tooltip: 'Menu',
-                icon: const Icon(Icons.menu_rounded, size: 22),
-                onPressed: () => Scaffold.of(context).openDrawer(),
-              ),
+            return IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu_rounded, size: 22),
+              onPressed: () => Scaffold.of(context).openDrawer(),
             );
           },
         ),
         actions: [
-          // Profile avatar
-          GestureDetector(
-            onTap: () => _go(context, '/settings'),
-            child: Container(
-              width: 40,
-              height: 40,
-
-              decoration: BoxDecoration(),
-              child: const Icon(
-                Icons.person_outline,
-                color: Colors.blueGrey,
-                size: 20,
-              ),
-            ),
+          IconButton(
+            tooltip: 'Profile',
+            icon: const Icon(Icons.person_outline_rounded, size: 22),
+            onPressed: () => _go(context, '/settings'),
           ),
         ],
       ),
@@ -170,19 +149,13 @@ class _HomeScreenState extends State<HomeScreen>
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              ShaderMask(
-                                shaderCallback:
-                                    (bounds) => LinearGradient(
-                                      colors: [
-                                        AppPalette.primaryBlue,
-                                        AppPalette.accentBlue,
-                                      ],
-                                    ).createShader(bounds),
-                                child: Text(
-                                  'Welcome to EventEase',
-                                  style: theme.textTheme.displaySmall?.copyWith(
-                                    color: Colors.white,
-                                  ),
+                              Text(
+                                'Welcome to EventEase',
+                                style: theme.textTheme.displaySmall?.copyWith(
+                                  color:
+                                      theme.brightness == Brightness.dark
+                                          ? AppPalette.accentBlue
+                                          : AppPalette.primaryBlue,
                                 ),
                               ),
                             ],

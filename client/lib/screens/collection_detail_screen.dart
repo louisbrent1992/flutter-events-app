@@ -98,15 +98,7 @@ class _CollectionDetailScreenState extends State<CollectionDetailScreen> {
         actions: [
           PopupMenuButton<String>(
             tooltip: 'More',
-            icon: Icon(
-              Icons.more_vert,
-              size: AppSizing.responsiveIconSize(
-                context,
-                mobile: 24,
-                tablet: 28,
-                desktop: 30,
-              ),
-            ),
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
             color: Theme.of(context).colorScheme.surface.withValues(
               alpha: Theme.of(context).colorScheme.alphaVeryHigh,
             ),

@@ -85,18 +85,11 @@ class _EventCollectionsScreenState extends State<EventCollectionsScreen> {
       backgroundColor: Colors.transparent,
       appBar: CustomAppBar(
         title: 'Collections',
+        fullTitle: 'Event Collections',
         actions: [
           PopupMenuButton<String>(
             tooltip: 'More',
-            icon: Icon(
-              Icons.more_vert,
-              size: AppSizing.responsiveIconSize(
-                context,
-                mobile: 24,
-                tablet: 28,
-                desktop: 30,
-              ),
-            ),
+            icon: const Icon(Icons.more_vert_rounded, size: 22),
             color: Theme.of(context).colorScheme.surface.withValues(
               alpha: Theme.of(context).colorScheme.alphaVeryHigh,
             ),
@@ -218,15 +211,7 @@ class _EventCollectionsScreenState extends State<EventCollectionsScreen> {
                       ),
                       trailing: PopupMenuButton<String>(
                         tooltip: 'More',
-                        icon: Icon(
-                          Icons.more_vert,
-                          size: AppSizing.responsiveIconSize(
-                            context,
-                            mobile: 22,
-                            tablet: 26,
-                            desktop: 28,
-                          ),
-                        ),
+                        icon: const Icon(Icons.more_vert_rounded, size: 22),
                         color: Theme.of(context).colorScheme.surface.withValues(
                           alpha: Theme.of(context).colorScheme.alphaVeryHigh,
                         ),

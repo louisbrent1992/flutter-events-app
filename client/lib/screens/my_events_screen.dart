@@ -6,6 +6,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import '../components/custom_app_bar.dart';
 import '../components/event_context_menu.dart';
+import '../components/nav_drawer.dart';
 import '../components/event_poster_card.dart';
 import '../components/floating_bottom_bar.dart';
 import '../components/glass_surface.dart';
@@ -128,9 +129,20 @@ class _MyEventsScreenState extends State<MyEventsScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      drawer: const NavDrawer(),
       appBar: CustomAppBar(
         title: '',
         centerTitle: false,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (ctx) {
+            return IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu_rounded, size: 22),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            );
+          },
+        ),
         actions: [_buildMoreActionsMenu(context)],
       ),
       body: Stack(
@@ -525,11 +537,10 @@ class _MyEventsScreenState extends State<MyEventsScreen>
   Widget _buildMoreActionsMenu(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final scheme = theme.colorScheme;
 
     return PopupMenuButton<String>(
       tooltip: 'Actions',
-      icon: Container(child: const Icon(Icons.more_vert_rounded, size: 20)),
+      icon: const Icon(Icons.more_vert_rounded, size: 22),
       color:
           isDark
               ? AppPalette.darkSurfaceElevated.withValues(alpha: 0.98)

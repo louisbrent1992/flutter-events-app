@@ -11,6 +11,7 @@ import 'dart:io' show Platform;
 import '../components/custom_app_bar.dart';
 import '../components/floating_bottom_bar.dart';
 import '../components/glass_surface.dart';
+import '../components/nav_drawer.dart';
 import '../providers/auth_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../providers/theme_provider.dart';
@@ -178,10 +179,20 @@ class _SettingsScreenState extends State<SettingsScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      drawer: const NavDrawer(),
       appBar: CustomAppBar(
         title: '',
         centerTitle: false,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+        leading: Builder(
+          builder: (ctx) {
+            return IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu_rounded, size: 22),
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+            );
+          },
+        ),
       ),
       body: Stack(
         children: [
@@ -196,23 +207,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   bottom: 140,
                 ),
                 children: [
-                  // Header
-                  Text(
-                    'Settings',
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Manage your account and preferences',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurface.withValues(alpha: 0.6),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Profile Card
+                  // ── Profile hero ────────────────────────────
                   Consumer<UserProfileProvider>(
                     builder: (context, profile, _) {
                       final displayName =
@@ -226,13 +221,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                       if (!_editingName) _nameController.text = displayName;
                       final photoUrl = _photoUrl(profile.profile);
 
-                      return _buildProfileCard(
+                      return _buildProfileHero(
                         context,
                         displayName: displayName,
                         email: email,
                         photoUrl: photoUrl,
                         isAuthed: isAuthed,
                         isPremium: subscription.isPremium,
+                        subscription: subscription,
                         onEditProfile:
                             isAuthed
                                 ? () async {
@@ -255,11 +251,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
                   // Name editing sheet
                   if (isAuthed && _editingName) _buildNameEditCard(context),
-                  if (isAuthed && _editingName) const SizedBox(height: 20),
+                  if (isAuthed && _editingName) const SizedBox(height: 16),
 
                   // Quick actions (for authed users)
                   if (isAuthed) ...[
@@ -437,205 +433,290 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildProfileCard(
+  Widget _buildProfileHero(
     BuildContext context, {
     required String displayName,
     required String email,
     required String? photoUrl,
     required bool isAuthed,
     required bool isPremium,
+    required SubscriptionProvider subscription,
     VoidCallback? onEditProfile,
   }) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
+    final importCredits = subscription.credits['eventImports'] ?? 0;
+    final aiCredits = subscription.credits['aiPlans'] ?? 0;
 
     return GradientGlassSurface(
       borderRadius: BorderRadius.circular(AppRadii.xxl),
       borderGradient: AppPalette.heroGradient,
       borderWidth: 2,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
       child: Column(
         children: [
-          Row(
-            children: [
-              // Avatar
-              GestureDetector(
-                onTap: onEditProfile,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient:
-                            photoUrl == null ? AppPalette.accentGradient : null,
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppPalette.primaryBlue.withValues(
-                              alpha: 0.3,
-                            ),
-                            blurRadius: 20,
-                            spreadRadius: -4,
-                          ),
-                        ],
+          // ── Avatar + Name ────────────────────────────
+          GestureDetector(
+            onTap: onEditProfile,
+            child: Stack(
+              children: [
+                Container(
+                  width: 88,
+                  height: 88,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient:
+                        photoUrl == null ? AppPalette.accentGradient : null,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 3,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppPalette.primaryBlue.withValues(alpha: 0.3),
+                        blurRadius: 24,
+                        spreadRadius: -4,
                       ),
-                      child: ClipOval(
-                        child:
-                            photoUrl == null
-                                ? Icon(
-                                  Icons.person_rounded,
-                                  size: 36,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                )
-                                : CachedNetworkImage(
-                                  imageUrl: photoUrl,
-                                  fit: BoxFit.cover,
-                                  errorWidget:
-                                      (_, __, ___) => Icon(
-                                        Icons.person_rounded,
-                                        size: 36,
-                                        color: Colors.white.withValues(
-                                          alpha: 0.9,
-                                        ),
-                                      ),
-                                ),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child:
+                        photoUrl == null
+                            ? Icon(
+                              Icons.person_rounded,
+                              size: 40,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            )
+                            : CachedNetworkImage(
+                              imageUrl: photoUrl,
+                              fit: BoxFit.cover,
+                              errorWidget:
+                                  (_, __, ___) => Icon(
+                                    Icons.person_rounded,
+                                    size: 40,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                            ),
+                  ),
+                ),
+                if (isAuthed)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: scheme.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isDark ? AppPalette.darkBg : Colors.white,
+                          width: 2,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_rounded,
+                        color: isDark ? Colors.white : AppPalette.darkBg,
+                        size: 12,
                       ),
                     ),
-                    if (isAuthed)
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: scheme.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? AppPalette.darkBg : Colors.white,
-                              width: 2,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.edit_rounded,
-                            color: isDark ? Colors.white : AppPalette.darkBg,
-                            size: 12,
-                          ),
-                        ),
-                      ),
-                  ],
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+
+          // Name + badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const SizedBox(width: 18),
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        if (isPremium)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppPalette.amber,
-                                  AppPalette.amber.withValues(alpha: 0.8),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(
-                                AppRadii.full,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star_rounded,
-                                  size: 14,
-                                  color: Colors.white,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  'PRO',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+              if (isPremium) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppPalette.amber,
+                        AppPalette.amber.withValues(alpha: 0.8),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: scheme.onSurface.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(AppRadii.full),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 13,
+                        color: Colors.white,
                       ),
-                    ),
-                    if (isAuthed) ...[
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          _ProfileActionChip(
-                            icon: Icons.edit_rounded,
-                            label: 'Edit',
-                            onTap: () => setState(() => _editingName = true),
-                          ),
-                          const SizedBox(width: 10),
-                          _ProfileActionChip(
-                            icon: Icons.workspace_premium_rounded,
-                            label: isPremium ? 'Manage' : 'Upgrade',
-                            isPrimary: !isPremium,
-                            onTap:
-                                () => Navigator.pushNamed(
-                                  context,
-                                  '/subscription',
-                                ),
-                          ),
-                        ],
-                      ),
-                    ] else ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed:
-                              () => Navigator.pushNamed(context, '/login'),
-                          child: const Text('Sign in'),
+                      const SizedBox(width: 3),
+                      Text(
+                        'PRO',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 10,
                         ),
                       ),
                     ],
-                  ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 2),
+          Text(
+            email,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
+
+          // ── Stats row ───────────────────────────────
+          if (isAuthed) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+              decoration: BoxDecoration(
+                color: scheme.surface.withValues(alpha: isDark ? 0.12 : 0.50),
+                borderRadius: BorderRadius.circular(AppRadii.lg),
+                border: Border.all(
+                  color: scheme.outline.withValues(alpha: isDark ? 0.10 : 0.08),
                 ),
               ),
-            ],
+              child: Row(
+                children: [
+                  _buildStatItem(
+                    context,
+                    icon: Icons.file_download_outlined,
+                    label: 'Imports',
+                    value:
+                        subscription.unlimitedUsage || subscription.trialActive
+                            ? '∞'
+                            : '$importCredits',
+                    color: AppPalette.accentBlue,
+                  ),
+                  _buildStatDivider(context),
+                  _buildStatItem(
+                    context,
+                    icon: Icons.auto_awesome_outlined,
+                    label: 'AI Plans',
+                    value:
+                        subscription.unlimitedUsage || subscription.trialActive
+                            ? '∞'
+                            : '$aiCredits',
+                    color: AppPalette.amber,
+                  ),
+                  _buildStatDivider(context),
+                  _buildStatItem(
+                    context,
+                    icon: Icons.workspace_premium_outlined,
+                    label: 'Tier',
+                    value:
+                        isPremium
+                            ? 'Pro'
+                            : subscription.trialActive
+                            ? 'Trial'
+                            : 'Free',
+                    color: AppPalette.emerald,
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Action chips ────────────────────────────
+          if (isAuthed) ...[
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _ProfileActionChip(
+                  icon: Icons.edit_rounded,
+                  label: 'Edit name',
+                  onTap: () => setState(() => _editingName = true),
+                ),
+                const SizedBox(width: 10),
+                _ProfileActionChip(
+                  icon: Icons.workspace_premium_rounded,
+                  label: isPremium ? 'Manage plan' : 'Upgrade',
+                  isPrimary: !isPremium,
+                  onTap: () => Navigator.pushNamed(context, '/subscription'),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: () => Navigator.pushNamed(context, '/login'),
+                child: const Text('Sign in'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.50),
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStatDivider(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      width: 1,
+      height: 36,
+      color: scheme.outline.withValues(alpha: isDark ? 0.12 : 0.08),
     );
   }
 

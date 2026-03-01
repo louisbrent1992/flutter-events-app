@@ -193,15 +193,15 @@ class _EventPosterCardState extends State<EventPosterCard>
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
                         colors: [
                           Colors.black.withValues(alpha: 0.0),
-                          Colors.black.withValues(alpha: 0.15),
-                          Colors.black.withValues(alpha: 0.5),
-                          Colors.black.withValues(alpha: 0.85),
+                          Colors.black.withValues(alpha: 0.2),
+                          Colors.black.withValues(alpha: 0.65),
+                          Colors.black.withValues(alpha: 0.95),
                         ],
-                        stops: const [0.0, 0.4, 0.65, 1.0],
+                        stops: const [0.0, 0.4, 0.75, 1.0],
                       ),
                     ),
                   ),

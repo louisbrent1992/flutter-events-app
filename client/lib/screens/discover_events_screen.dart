@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:eventease/components/custom_app_bar.dart';
+import 'package:eventease/components/nav_drawer.dart';
 import 'package:provider/provider.dart';
 import 'package:eventease/components/event_context_menu.dart';
 import 'package:eventease/providers/discover_provider.dart';
@@ -205,10 +206,21 @@ class _DiscoverEventsScreenState extends State<DiscoverEventsScreen>
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      drawer: const NavDrawer(),
       appBar: CustomAppBar(
         title: '',
         centerTitle: false,
-        automaticallyImplyLeading: true,
+        automaticallyImplyLeading: false,
+
+        leading: Builder(
+          builder: (context) {
+            return IconButton(
+              tooltip: 'Menu',
+              icon: const Icon(Icons.menu_rounded, size: 22),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+            );
+          },
+        ),
         actions: [
           // Layout toggle (show next layout)
           IconButton(
