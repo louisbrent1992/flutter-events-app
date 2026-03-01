@@ -630,7 +630,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     '/myEvents':
         (args) => const PersistentBannerLayout(child: MyEventsScreen()),
     '/createEvent':
-        (args) => const PersistentBannerLayout(child: CreateEventScreen()),
+        (args) => PersistentBannerLayout(
+          child: CreateEventScreen(eventToEdit: args as Event?),
+        ),
     '/eventDetail':
         (args) => PersistentBannerLayout(
           child: EventDetailScreen(event: args as Event),

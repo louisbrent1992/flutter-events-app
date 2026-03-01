@@ -33,6 +33,7 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen>
     with SingleTickerProviderStateMixin {
+  late Event _currentEvent;
   late ScrollController _scrollController;
   double _scrollOffset = 0;
   bool _isSaved = false;
@@ -43,6 +44,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
   @override
   void initState() {
     super.initState();
+    _currentEvent = widget.event;
     _scrollController =
         ScrollController()..addListener(() {
           setState(() => _scrollOffset = _scrollController.offset);
@@ -72,7 +74,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
   void _checkIfSaved() {
     final provider = context.read<EventProvider>();
-    final saved = provider.userEvents.any((e) => e.id == widget.event.id);
+    final saved = provider.userEvents.any((e) => e.id == _currentEvent.id);
     setState(() => _isSaved = saved);
   }
 
@@ -106,11 +108,11 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     try {
       final provider = context.read<EventProvider>();
       if (_isSaved) {
-        await provider.deleteEvent(widget.event.id, context);
+        await provider.deleteEvent(_currentEvent.id, context);
         if (!mounted) return;
         SnackBarHelper.showSuccess(context, 'Event removed from calendar');
       } else {
-        await provider.createEvent(widget.event, context);
+        await provider.createEvent(_currentEvent, context);
         if (!mounted) return;
         SnackBarHelper.showSuccess(context, 'Event saved to calendar');
 
@@ -127,7 +129,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
   }
 
   void _showReminderPrompt() {
-    if (widget.event.startAt == null) return;
+    if (_currentEvent.startAt == null) return;
 
     showModalBottomSheet(
       context: context,
@@ -152,21 +154,37 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     HapticFeedback.lightImpact();
     // Construct share text
     final buffer = StringBuffer();
-    buffer.writeln(widget.event.title);
-    if (widget.event.startAt != null) {
-      final dt = widget.event.startAt!;
+    buffer.writeln(_currentEvent.title);
+    if (_currentEvent.startAt != null) {
+      final dt = _currentEvent.startAt!;
       buffer.writeln('${_formatDate(dt)} at ${_formatTime(dt)}');
     }
-    if ((widget.event.venueName ?? '').isNotEmpty) {
-      buffer.writeln(widget.event.venueName);
+    if ((_currentEvent.venueName ?? '').isNotEmpty) {
+      buffer.writeln(_currentEvent.venueName);
     }
-    if ((widget.event.ticketUrl ?? '').isNotEmpty) {
-      buffer.writeln(widget.event.ticketUrl);
+    if ((_currentEvent.ticketUrl ?? '').isNotEmpty) {
+      buffer.writeln(_currentEvent.ticketUrl);
     }
 
     await Clipboard.setData(ClipboardData(text: buffer.toString()));
     if (!mounted) return;
     SnackBarHelper.showSuccess(context, 'Event details copied to clipboard');
+  }
+
+  Future<void> _editEvent() async {
+    final updatedEvent =
+        await Navigator.pushNamed(
+              context,
+              '/createEvent',
+              arguments: _currentEvent,
+            )
+            as Event?;
+
+    if (updatedEvent != null && mounted) {
+      setState(() {
+        _currentEvent = updatedEvent;
+      });
+    }
   }
 
   String _formatDate(DateTime dt) {
@@ -181,10 +199,10 @@ class _EventDetailScreenState extends State<EventDetailScreen>
     final isDark = theme.brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
     final heroHeight = screenHeight * 0.45;
-    final hasImage = (widget.event.imageUrl ?? '').trim().isNotEmpty;
+    final hasImage = (_currentEvent.imageUrl ?? '').trim().isNotEmpty;
     final accentColor =
-        widget.event.categories.isNotEmpty
-            ? _getCategoryColor(widget.event.categories.first)
+        _currentEvent.categories.isNotEmpty
+            ? _getCategoryColor(_currentEvent.categories.first)
             : scheme.primary;
 
     // Calculate app bar opacity based on scroll
@@ -277,7 +295,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
         // Image
         hasImage
             ? CachedNetworkImage(
-              imageUrl: widget.event.imageUrl!.trim(),
+              imageUrl: _currentEvent.imageUrl!.trim(),
               fit: BoxFit.cover,
               placeholder: (_, __) => _buildImagePlaceholder(accentColor),
               errorWidget: (_, __, ___) => _buildImagePlaceholder(accentColor),
@@ -312,7 +330,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               // Category Pill
-              if (widget.event.categories.isNotEmpty)
+              if (_currentEvent.categories.isNotEmpty)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -330,7 +348,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     ],
                   ),
                   child: Text(
-                    widget.event.categories.first.toUpperCase(),
+                    _currentEvent.categories.first.toUpperCase(),
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
@@ -342,7 +360,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
               // Title
               Text(
-                widget.event.title,
+                _currentEvent.title,
                 style: theme.textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w800,
@@ -359,7 +377,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               const SizedBox(height: 12),
 
               // Date Row
-              if (widget.event.startAt != null)
+              if (_currentEvent.startAt != null)
                 Row(
                   children: [
                     Icon(
@@ -370,7 +388,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     const SizedBox(width: 8),
                     Flexible(
                       child: Text(
-                        _formatDate(widget.event.startAt!).toUpperCase(),
+                        _formatDate(_currentEvent.startAt!).toUpperCase(),
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w700,
@@ -379,7 +397,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    if (widget.event.startAt != null) ...[
+                    if (_currentEvent.startAt != null) ...[
                       const SizedBox(width: 8),
                       Text(
                         '•',
@@ -389,7 +407,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        _formatTime(widget.event.startAt!),
+                        _formatTime(_currentEvent.startAt!),
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: Colors.white.withValues(alpha: 0.9),
                           fontWeight: FontWeight.w600,
@@ -491,16 +509,15 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                 ),
               ),
 
-            const Spacer(),
+            const SizedBox(width: 8),
 
             // Title (appears on scroll)
-            AnimatedOpacity(
-              duration: AppAnimations.fast,
-              opacity: opacity > 0.7 ? 1.0 : 0.0,
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.5,
+            Expanded(
+              child: AnimatedOpacity(
+                duration: AppAnimations.fast,
+                opacity: opacity > 0.7 ? 1.0 : 0.0,
                 child: Text(
-                  widget.event.title,
+                  _currentEvent.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -511,7 +528,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
               ),
             ),
 
-            const Spacer(),
+            const SizedBox(width: 8),
 
             // Save/Bookmark button
             if (showGlass)
@@ -565,7 +582,37 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                 ),
               ),
 
-            const SizedBox(width: 12),
+            const SizedBox(width: 4),
+
+            // Edit button (only if user owns it)
+            if (context.watch<AuthService>().user?.uid ==
+                    _currentEvent.userId &&
+                _currentEvent.userId.isNotEmpty) ...[
+              if (showGlass)
+                GlassSurface(
+                  blurSigma: 16,
+                  borderRadius: BorderRadius.circular(AppRadii.full),
+                  padding: EdgeInsets.zero,
+                  tintColor: Colors.black.withValues(alpha: 0.3),
+                  borderColor: Colors.white.withValues(alpha: 0.2),
+                  child: IconButton(
+                    onPressed: _editEvent,
+                    icon: const Icon(Icons.edit_rounded, color: Colors.white),
+                  ),
+                )
+              else
+                Container(
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    onPressed: _editEvent,
+                    icon: Icon(Icons.edit_rounded, color: scheme.onSurface),
+                  ),
+                ),
+              const SizedBox(width: 4),
+            ],
 
             // Share button - always visible with appropriate styling
             if (showGlass)
@@ -611,13 +658,15 @@ class _EventDetailScreenState extends State<EventDetailScreen>
 
           // Venue & Time Info Cards (Full Width)
           Container(
-            padding: const EdgeInsets.all(20),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16),
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(AppRadii.xl),
               border: Border.all(color: scheme.outline.withValues(alpha: 0.1)),
             ),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
                   child: Column(
@@ -633,15 +682,15 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.event.venueName ?? 'TBA',
+                        _currentEvent.venueName ?? 'TBA',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
-                        widget.event.city ?? '',
+                        _currentEvent.city ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurface.withValues(alpha: 0.6),
                         ),
@@ -651,12 +700,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     ],
                   ),
                 ),
-                Container(
-                  width: 1,
-                  height: 40,
-                  color: scheme.outline.withValues(alpha: 0.1),
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                ),
+                const SizedBox(width: 24),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -671,16 +715,16 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.event.startAt != null
-                            ? _formatTime(widget.event.startAt!)
+                        _currentEvent.startAt != null
+                            ? _formatTime(_currentEvent.startAt!)
                             : 'TBA',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
-                        widget.event.startAt != null
-                            ? _formatDate(widget.event.startAt!)
+                        _currentEvent.startAt != null
+                            ? _formatDate(_currentEvent.startAt!)
                             : '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: scheme.onSurface.withValues(alpha: 0.6),
@@ -704,11 +748,11 @@ class _EventDetailScreenState extends State<EventDetailScreen>
             ),
           ),
           const SizedBox(height: 12),
-          _buildStructuredDescription(context, widget.event.description),
+          _buildStructuredDescription(context, _currentEvent.description),
           const SizedBox(height: 28),
 
           // Location section
-          if ((widget.event.address ?? widget.event.venueName ?? '')
+          if ((_currentEvent.address ?? _currentEvent.venueName ?? '')
               .isNotEmpty) ...[
             Text(
               'Location',
@@ -749,18 +793,18 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if ((widget.event.venueName ?? '').isNotEmpty)
+                            if ((_currentEvent.venueName ?? '').isNotEmpty)
                               Text(
-                                widget.event.venueName!,
+                                _currentEvent.venueName!,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
-                            if ((widget.event.address ?? '').isNotEmpty)
+                            if ((_currentEvent.address ?? '').isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
                                 child: Text(
-                                  widget.event.address!,
+                                  _currentEvent.address!,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: scheme.onSurface.withValues(
                                       alpha: 0.7,
@@ -770,9 +814,9 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                               ),
                             Text(
                               [
-                                widget.event.city,
-                                widget.event.region,
-                                widget.event.country,
+                                _currentEvent.city,
+                                _currentEvent.region,
+                                _currentEvent.country,
                               ].where((s) => (s ?? '').isNotEmpty).join(', '),
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: scheme.onSurface.withValues(alpha: 0.5),
@@ -789,7 +833,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     child: OutlinedButton.icon(
                       onPressed: () {
                         final query = Uri.encodeComponent(
-                          '${widget.event.venueName ?? ''} ${widget.event.address ?? ''} ${widget.event.city ?? ''}',
+                          '${_currentEvent.venueName ?? ''} ${_currentEvent.address ?? ''} ${_currentEvent.city ?? ''}',
                         );
                         _openUrl(
                           'https://www.google.com/maps/search/?api=1&query=$query',
@@ -812,7 +856,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
           ],
 
           // Tickets section
-          if ((widget.event.ticketUrl ?? '').isNotEmpty) ...[
+          if ((_currentEvent.ticketUrl ?? '').isNotEmpty) ...[
             Text(
               'Tickets',
               style: theme.textTheme.titleLarge?.copyWith(
@@ -842,8 +886,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          widget.event.ticketPrice != null
-                              ? 'Tickets from ${widget.event.ticketPrice}'
+                          _currentEvent.ticketPrice != null
+                              ? 'Tickets from ${_currentEvent.ticketPrice}'
                               : 'Tickets available',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
@@ -857,7 +901,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
-                      onPressed: () => _openUrl(widget.event.ticketUrl!),
+                      onPressed: () => _openUrl(_currentEvent.ticketUrl!),
                       child: const Text('Buy tickets'),
                     ),
                   ),
@@ -899,8 +943,8 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                 child: InkWell(
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    if ((widget.event.ticketUrl ?? '').isNotEmpty) {
-                      _openUrl(widget.event.ticketUrl!);
+                    if ((_currentEvent.ticketUrl ?? '').isNotEmpty) {
+                      _openUrl(_currentEvent.ticketUrl!);
                     } else {
                       _toggleSave();
                     }
@@ -910,7 +954,7 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     alignment: Alignment.center,
                     child: Text(
-                      (widget.event.ticketUrl ?? '').isNotEmpty
+                      (_currentEvent.ticketUrl ?? '').isNotEmpty
                           ? 'Get Tickets'
                           : (_isSaved
                               ? 'Saved to Calendar'
@@ -993,13 +1037,13 @@ class _EventDetailScreenState extends State<EventDetailScreen>
                   child: FilledButton(
                     onPressed: () async {
                       Navigator.pop(context);
-                      final reminderTime = widget.event.startAt!.subtract(
+                      final reminderTime = _currentEvent.startAt!.subtract(
                         const Duration(hours: 1),
                       );
                       await NotificationScheduler.scheduleEventReminder(
-                        eventId: widget.event.id,
+                        eventId: _currentEvent.id,
                         title: 'Event Reminder',
-                        body: '${widget.event.title} starts in 1 hour',
+                        body: '${_currentEvent.title} starts in 1 hour',
                         remindAt: reminderTime,
                       );
                       if (!mounted) return;

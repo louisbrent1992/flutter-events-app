@@ -7,7 +7,9 @@ import '../models/event.dart';
 import '../utils/snackbar_helper.dart';
 
 class CreateEventScreen extends StatefulWidget {
-  const CreateEventScreen({super.key});
+  final Event? eventToEdit;
+
+  const CreateEventScreen({super.key, this.eventToEdit});
 
   @override
   State<CreateEventScreen> createState() => _CreateEventScreenState();
@@ -19,6 +21,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _address = TextEditingController();
   final _description = TextEditingController();
   DateTime? _startAt;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.eventToEdit != null) {
+      final e = widget.eventToEdit!;
+      _title.text = e.title;
+      _venue.text = e.venueName ?? '';
+      _address.text = e.address ?? '';
+      _description.text = e.description;
+      _startAt = e.startAt;
+    }
+  }
 
   @override
   void dispose() {
@@ -61,29 +76,47 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       return;
     }
 
-    final event = Event(
-      title: title,
-      description: _description.text.trim(),
-      venueName: _venue.text.trim().isEmpty ? null : _venue.text.trim(),
-      address: _address.text.trim().isEmpty ? null : _address.text.trim(),
-      startAt: _startAt,
-      categories: const [],
-      sourcePlatform: 'manual',
-    );
+    final isEditing = widget.eventToEdit != null;
 
-    final created = await context.read<EventProvider>().createEvent(
-      event,
-      context,
-    );
+    final event =
+        isEditing
+            ? widget.eventToEdit!.copyWith(
+              title: title,
+              description: _description.text.trim(),
+              venueName: _venue.text.trim().isEmpty ? null : _venue.text.trim(),
+              address:
+                  _address.text.trim().isEmpty ? null : _address.text.trim(),
+              startAt: _startAt,
+            )
+            : Event(
+              title: title,
+              description: _description.text.trim(),
+              venueName: _venue.text.trim().isEmpty ? null : _venue.text.trim(),
+              address:
+                  _address.text.trim().isEmpty ? null : _address.text.trim(),
+              startAt: _startAt,
+              categories: const [],
+              sourcePlatform: 'manual',
+            );
+
+    final provider = context.read<EventProvider>();
+    final result =
+        isEditing
+            ? await provider.updateEvent(event, context)
+            : await provider.createEvent(event, context);
+
     if (!mounted) return;
-    if (created != null) {
-      SnackBarHelper.showSuccess(context, 'Event created');
-      Navigator.pop(context);
+    if (result != null) {
+      SnackBarHelper.showSuccess(
+        context,
+        isEditing ? 'Event updated' : 'Event created',
+      );
+      Navigator.pop(context, result);
     } else {
       SnackBarHelper.showError(
         context,
-        context.read<EventProvider>().error?.userFriendlyMessage ??
-            'Failed to create event',
+        provider.error?.userFriendlyMessage ??
+            (isEditing ? 'Failed to update event' : 'Failed to create event'),
       );
     }
   }
@@ -94,8 +127,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: CustomAppBar(
-        title: 'Create',
-        fullTitle: 'Create Event',
+        title: widget.eventToEdit != null ? 'Edit' : 'Create',
+        fullTitle: widget.eventToEdit != null ? 'Edit Event' : 'Create Event',
         // actions: [
         //   TextButton(
         //     onPressed: _create,
@@ -153,7 +186,12 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
               ),
               SizedBox(height: AppSpacing.xl),
-              FilledButton(onPressed: _create, child: const Text('Save event')),
+              FilledButton(
+                onPressed: _create,
+                child: Text(
+                  widget.eventToEdit != null ? 'Save changes' : 'Save event',
+                ),
+              ),
             ],
           ),
         ),

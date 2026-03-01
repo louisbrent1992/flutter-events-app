@@ -162,6 +162,29 @@ class EventProvider extends ChangeNotifier {
     }
   }
 
+  Future<Event?> updateEvent(Event event, BuildContext context) async {
+    clearError();
+
+    try {
+      final resp = await EventService.updateEvent(event);
+      if (resp.success && resp.data != null) {
+        final updated = resp.data!;
+        final index = _userEvents.indexWhere((e) => e.id == event.id);
+        if (index >= 0) {
+          _userEvents[index] = updated;
+          notifyListeners();
+          _eventsChangedController.add(null);
+        }
+        return updated;
+      }
+      _setError(resp.message ?? 'Failed to update event');
+      return null;
+    } catch (e) {
+      _setError(e.toString());
+      return null;
+    }
+  }
+
   Future<bool> deleteEvent(String id, BuildContext context) async {
     clearError();
 
