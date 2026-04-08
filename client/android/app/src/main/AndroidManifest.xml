@@ -39,7 +39,7 @@
     The app uses the system Photo Picker (via file_picker) which doesn't require these permissions.
     -->
     <application
-        android:label="EventEase"
+        android:label="Spark Events"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true"

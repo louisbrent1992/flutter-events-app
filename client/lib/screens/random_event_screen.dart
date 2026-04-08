@@ -124,7 +124,7 @@ class _RandomEventScreenState extends State<RandomEventScreen> {
       if (e.description.trim().isNotEmpty) e.description.trim(),
       ticketLine.isEmpty ? '' : ticketLine.trim(),
       '',
-      'Shared from EventEase',
+      'Shared from Spark Events',
     ].where((s) => s.trim().isNotEmpty).join('\n');
 
     await Share.share(shareText, sharePositionOrigin: origin);

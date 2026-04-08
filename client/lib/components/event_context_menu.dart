@@ -101,7 +101,7 @@ class EventContextMenu extends StatelessWidget {
       if (event.description.trim().isNotEmpty) event.description.trim(),
       ticketLine.isEmpty ? '' : ticketLine.trim(),
       '',
-      'Shared from EventEase',
+      'Shared from Spark Events',
     ].where((s) => s.trim().isNotEmpty).join('\n');
 
     await Share.share(shareText, sharePositionOrigin: origin);

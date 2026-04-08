@@ -150,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Welcome to EventEase',
+                                'Welcome to Spark Events',
                                 style: theme.textTheme.displaySmall?.copyWith(
                                   color:
                                       theme.brightness == Brightness.dark

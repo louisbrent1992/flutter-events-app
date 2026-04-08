@@ -390,7 +390,7 @@ class _ImportEventScreenState extends State<ImportEventScreen>
                 iconColor: AppPalette.accentBlue,
                 title: 'Import from Calendar',
                 description:
-                    'Pull events directly from your device calendar into EventEase.',
+                    'Pull events directly from your device calendar into Spark Events.',
                 buttonLabel: 'Open calendar',
                 onPressed:
                     () => Navigator.pushNamed(context, '/importCalendar'),

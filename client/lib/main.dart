@@ -691,7 +691,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           return MaterialApp(
             navigatorKey: navigatorKey,
             navigatorObservers: [MyApp.routeObserver],
-            title: 'EventEase',
+            title: 'Spark Events',
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode:

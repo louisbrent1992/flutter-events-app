@@ -175,7 +175,7 @@ class _SplashScreenState extends State<SplashScreen>
 
                 // App name
                 Text(
-                  'EventEase',
+                  'Spark Events',
                   style: textTheme.headlineLarge?.copyWith(
                     color: scheme.onSurface,
                     fontWeight: FontWeight.w700,

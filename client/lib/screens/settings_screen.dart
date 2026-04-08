@@ -77,14 +77,14 @@ class _SettingsScreenState extends State<SettingsScreen>
       if (!ok && context.mounted) {
         SnackBarHelper.showInfo(
           context,
-          'Open Settings to manage notifications for EventEase.',
+          'Open Settings to manage notifications for Spark Events.',
         );
       }
     } catch (_) {
       if (!context.mounted) return;
       SnackBarHelper.showInfo(
         context,
-        'Open Settings to manage notifications for EventEase.',
+        'Open Settings to manage notifications for Spark Events.',
       );
     }
   }
@@ -98,16 +98,16 @@ class _SettingsScreenState extends State<SettingsScreen>
       scheme: 'mailto',
       path: 'support@eventease.app',
       queryParameters: <String, String>{
-        'subject': subject ?? 'EventEase Support',
+        'subject': subject ?? 'Spark Events Support',
         'body': [
-          'Hi EventEase team,',
+          'Hi Spark Events team,',
           '',
           'What I need help with:',
           '',
           '---',
           'Diagnostics:',
           'Platform: $platform',
-          'App: EventEase • v1.0.0',
+          'App: Spark Events • v1.0.0',
           'Server: $base',
         ].join('\n'),
       },
@@ -417,7 +417,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   // App version
                   Center(
                     child: Text(
-                      'EventEase • v1.0.0',
+                      'Spark Events • v1.0.0',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: scheme.onSurface.withValues(alpha: 0.4),
                       ),

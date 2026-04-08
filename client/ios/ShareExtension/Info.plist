@@ -7,7 +7,7 @@
         <key>CFBundleVersion</key>
         <string>$(FLUTTER_BUILD_NUMBER)</string>
         <key>CFBundleDisplayName</key>
-        <string>Add to EventEase</string>
+        <string>Add to Spark Events</string>
         <key>CFBundleIdentifier</key>
         <string>com.eventease.app.ShareExtension</string>
         <key>NSExtension</key>
