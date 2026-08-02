@@ -1,0 +1,44 @@
+{
+	"flutter": {
+		"platforms": {
+			"android": {
+				"default": {
+					"projectId": "eventease-70a25",
+					"appId": "1:378901243002:android:d178010a90a0e7d4acc7c3",
+					"fileOutput": "android/app/google-services.json"
+				}
+			},
+			"dart": {
+				"lib/firebase_options.dart": {
+					"projectId": "eventease-70a25",
+					"configurations": {
+						"android": "1:378901243002:android:d178010a90a0e7d4acc7c3",
+						"ios": "1:378901243002:ios:c94dd3c512fdac69acc7c3"
+					}
+				}
+			},
+			"ios": {
+				"default": {
+					"projectId": "eventease-70a25",
+					"appId": "1:378901243002:ios:c94dd3c512fdac69acc7c3",
+					"uploadDebugSymbols": false,
+					"fileOutput": "ios/Runner/GoogleService-Info.plist"
+				}
+			}
+		}
+	},
+	"emulators": {
+		"dataconnect": { "dataDir": "dataconnect/.dataconnect/pgliteData" }
+	},
+	"dataconnect": { "source": "dataconnect" },
+	"firestore": {
+		"rules": "firestore.rules",
+		"indexes": "firestore.indexes.json"
+	},
+	"appcheck": {
+		"debug": {
+			"token": "a3c75c86-5cb5-4a6f-9919-9e0831cee57c"
+		},
+		"enforcement": "ENFORCED"
+	}
+}

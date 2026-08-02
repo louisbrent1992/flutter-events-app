@@ -1,0 +1,5 @@
+# Recommended Node settings
+node_modules/
+npm-debug.log
+.env
+config/firebase-service-account.json
